@@ -10,16 +10,16 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from submodules.SparseLLM.datautils import SYSTEM_PROMPT, _build_user_message, get_tom
 from submodules.SparseLLM.model_utils import llama_sparsellm
 
-SHORT_NAMES = {
-    "Ambiguous Story Task.jsonl": "AST",
-    "False Belief Task.jsonl": "FBT",
-    "Hinting Task Test.jsonl": "HTT",
-    "Faux-pas Recognition Test.jsonl": "FPR",
-    "Unexpected Outcome Test.jsonl": "UOT",
-    "Persuasion Story Task.jsonl": "PST",
-    "Strange Story Task.jsonl": "SST",
-    "Scalar Implicature Test.jsonl": "SIT",
-}
+# SHORT_NAMES = {
+#     "Ambiguous Story Task.jsonl": "AST",
+#     "False Belief Task.jsonl": "FBT",
+#     "Hinting Task Test.jsonl": "HTT",
+#     "Faux-pas Recognition Test.jsonl": "FPR",
+#     "Unexpected Outcome Test.jsonl": "UOT",
+#     "Persuasion Story Task.jsonl": "PST",
+#     "Strange Story Task.jsonl": "SST",
+#     "Scalar Implicature Test.jsonl": "SIT",
+# }
 
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -196,6 +196,7 @@ def save_results(results_rows, header=None):
             writer.writerow(row)
 
 
+# TODO change to load another calib dataset
 def prepare_calibration(tokenizer, subtask_file, train_num, seed):
     """Prepare calibration data for pruning."""
     trainloader, _ = get_tom(
@@ -236,6 +237,7 @@ def main() -> None:
     setup_environment(args.seed)
     results_rows = []
 
+    # todo remove this loop
     for model_path in args.models:
         # Raw model evaluation
         print(f"\n=== Evaluating RAW model: {model_path} ===")
@@ -253,6 +255,7 @@ def main() -> None:
         del raw_model
         torch.cuda.empty_cache()
 
+        # todo reorder and clean up loops, remove both
         # Pruned model evaluation
         print(f"\n=== Evaluating PRUNED models for: {model_path} ===")
         for subtask_file in SHORT_NAMES.keys():
@@ -275,6 +278,7 @@ def main() -> None:
                 llama_sparsellm(
                     base_model, trainloader, torch.device(DEVICE), ratio / 100.0
                 )
+
                 subtask_accs = evaluate_pruned_model(
                     base_model,
                     tokenizer,
