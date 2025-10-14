@@ -1,2 +1,5 @@
 results.json
 *.jsonl
+benchmark_data
+hf_cache
+.idea
