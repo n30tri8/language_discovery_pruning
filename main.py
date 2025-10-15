@@ -7,24 +7,22 @@ import torch
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from submodules.SparseLLM.datautils import SYSTEM_PROMPT, _build_user_message, get_tom
+from submodules.SparseLLM.datautils import SYSTEM_PROMPT, _build_user_message, get_mmlu
 from submodules.SparseLLM.model_utils import llama_sparsellm
 
-# SHORT_NAMES = {
-#     "Ambiguous Story Task.jsonl": "AST",
-#     "False Belief Task.jsonl": "FBT",
-#     "Hinting Task Test.jsonl": "HTT",
-#     "Faux-pas Recognition Test.jsonl": "FPR",
-#     "Unexpected Outcome Test.jsonl": "UOT",
-#     "Persuasion Story Task.jsonl": "PST",
-#     "Strange Story Task.jsonl": "SST",
-#     "Scalar Implicature Test.jsonl": "SIT",
-# }
-
+SUBJECTS = [
+    "management",
+    "professional_accounting",
+    "marketing",
+]
+LANGUAGES = ["EN"]
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 CSV_NAME = "output.csv"
+
+# Add a simple module-level model variable to replace the argparse --models option
+MODEL = "meta-llama/Llama-3.2-3b-Instruct"
 
 
 def set_seed(seed):
@@ -53,27 +51,28 @@ def extract_answer(text: str) -> str:
 
 
 def format_prompt_for_test(record, shuffle_choices=True):
-    system_msg = SYSTEM_PROMPT
+    system_msg = SYSTEM_PROMPT.format(field=record.get("subject"))
     user_msg, letter_map = _build_user_message(record, shuffle=shuffle_choices)
     return system_msg, user_msg, letter_map
 
 
-def evaluate_model_on_tom(
-    model, tokenizer, subtask_records, subtask_name, device="cuda"
+# todo cahnge
+def evaluate_model_on_dataset(
+        model, tokenizer, subject_records, subject, device="cuda"
 ):
     """
     Evaluate a *finetuned or pruned* model on a list of leftover test records.
     Uses separate system and user messages for proper chat formatting.
     """
-    if len(subtask_records) == 0:
+    if len(subject_records) == 0:
         return 0.0
 
     model.eval()
     correct = 0
     for rec in tqdm(
-        subtask_records, desc=f"Evaluating on {subtask_name}", unit="record"
+            subject_records, desc=f"Evaluating on {subject}", unit="record"
     ):
-        gold = rec.get("ANSWER\nANSWER", "A") or "A"
+        gold = rec.get("answer", "A")
 
         system_msg, user_msg, letter_map = format_prompt_for_test(
             rec, shuffle_choices=True
@@ -104,7 +103,7 @@ def evaluate_model_on_tom(
             top_p=None,
         )
         # Remove the prompt portion
-        gen_part = out[0][inputs["input_ids"].shape[1] :]
+        gen_part = out[0][inputs["input_ids"].shape[1]:]
         gen_text = tokenizer.decode(gen_part, skip_special_tokens=True)
         raw_letter = extract_answer(gen_text)
         mapped_letter = letter_map.get(raw_letter, "A")
@@ -112,7 +111,7 @@ def evaluate_model_on_tom(
         if mapped_letter == gold:
             correct += 1
 
-    return correct / len(subtask_records)
+    return correct / len(subject_records)
 
 
 def setup_environment(seed):
@@ -125,7 +124,7 @@ def setup_environment(seed):
 
 def setup_tokenizer(model_name):
     """Initialize and configure tokenizer."""
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, cache_dir="./hf_cache")
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token_id = tokenizer.eos_token_id or 0
     return tokenizer
@@ -143,34 +142,26 @@ def load_model(model_name):
 def evaluate_raw_model(model, tokenizer, test_num, seed):
     """Evaluate the raw model on all subtasks."""
     subtask_accs = []
-    for eval_task in SHORT_NAMES.keys():
-        _, test_recs = get_tom(
-            tokenizer, eval_task, train_num=0, test_num=test_num, seed=seed
-        )
-        acc = evaluate_model_on_tom(
-            model, tokenizer, test_recs, eval_task, device=DEVICE
-        )
-        subtask_accs.append(acc)
+    for subject in SUBJECTS:
+        for lang in LANGUAGES:
+            _, test_recs = get_mmlu(tokenizer, subject, lang, train_num=0, test_num=test_num, seed=seed)
+            acc = evaluate_model_on_dataset(
+                model, tokenizer, test_recs, subject, device=DEVICE
+            )
+            subtask_accs.append(acc)
     return subtask_accs
 
 
 def evaluate_pruned_model(
-    model, tokenizer, subtask_file, ratio, train_num, test_num, seed
+        model, tokenizer, subject, lang, test_num, seed
 ):
     """Evaluate a pruned model on all subtasks."""
     subtask_accs = []
-    for eval_task in SHORT_NAMES.keys():
-        _, test_recs = get_tom(
-            tokenizer,
-            eval_task,
-            train_num=train_num if eval_task == subtask_file else 0,
-            test_num=test_num,
-            seed=seed,
-        )
-        acc = evaluate_model_on_tom(
-            model, tokenizer, test_recs, eval_task, device=DEVICE
-        )
-        subtask_accs.append(acc)
+    _, test_recs = get_mmlu(tokenizer, subject, lang, train_num=0, test_num=test_num, seed=seed)
+    acc = evaluate_model_on_dataset(
+        model, tokenizer, test_recs, subject, device=DEVICE
+    )
+    subtask_accs.append(acc)
     return subtask_accs
 
 
@@ -178,7 +169,7 @@ def save_pruned_model(model, subtask_file, ratio, model_name):
     """Save the pruned model to cache directory."""
     cache_dir = os.getenv("HF_HOME", os.path.expanduser("~/.cache/huggingface/hub"))
     save_name = (
-        f"{os.path.basename(model_name)}_{SHORT_NAMES[subtask_file]}_{int(ratio)}pct"
+        f"{os.path.basename(model_name)}_{SUBJECTS[subtask_file]}_{int(ratio)}pct"
     )
     save_path = os.path.join(cache_dir, "models--" + save_name.replace("/", "--"))
     os.makedirs(save_path, exist_ok=True)
@@ -188,7 +179,7 @@ def save_pruned_model(model, subtask_file, ratio, model_name):
 
 def save_results(results_rows, header=None):
     """Save results to CSV file."""
-    header = header or ["model_name", "sparsity"] + list(SHORT_NAMES.values())
+    header = header or ["model_name", "sparsity"] + SUBJECTS
     with open(CSV_NAME, "w", newline="", encoding="utf-8") as fout:
         writer = csv.writer(fout)
         writer.writerow(header)
@@ -196,25 +187,15 @@ def save_results(results_rows, header=None):
             writer.writerow(row)
 
 
-# TODO change to load another calib dataset
-def prepare_calibration(tokenizer, subtask_file, train_num, seed):
+def prepare_calibration(tokenizer, subject, lang, train_num, seed):
     """Prepare calibration data for pruning."""
-    trainloader, _ = get_tom(
-        tokenizer, subtask_file, train_num=train_num, test_num=0, seed=seed
-    )
+    trainloader, _ = get_mmlu(tokenizer, subject, lang, train_num=train_num, test_num=0, seed=seed)
     max_cal_len = max(inp.shape[1] for inp, _, _ in trainloader)
     return trainloader, max_cal_len
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--models",
-        nargs="+",
-        type=str,
-        default=["meta-llama/Llama-3.2-3b-Instruct"],
-        help="List of base model names/paths.",
-    )
     parser.add_argument(
         "--train_num", type=int, default=32, help="Calibration set size per subtask."
     )
@@ -237,41 +218,38 @@ def main() -> None:
     setup_environment(args.seed)
     results_rows = []
 
-    # todo remove this loop
-    for model_path in args.models:
-        # Raw model evaluation
-        print(f"\n=== Evaluating RAW model: {model_path} ===")
-        tokenizer = setup_tokenizer(model_path)
-        raw_model = load_model(model_path)
+    # iterate over the single configured model
+    # Raw model evaluation
+    print(f"\n=== Evaluating RAW model: {MODEL} ===")
+    tokenizer = setup_tokenizer(MODEL)
+    raw_model = load_model(MODEL)
 
-        raw_accs = evaluate_raw_model(raw_model, tokenizer, args.test_num, args.seed)
-        model_name = os.path.basename(model_path)
-        results_rows.append(
-            ["raw", model_name, "None", "0%"] + [f"{acc:.4f}" for acc in raw_accs]
-        )
+    raw_accs = evaluate_raw_model(raw_model, tokenizer, args.test_num, args.seed)
+    model_name = os.path.basename(MODEL)
+    results_rows.append(
+        ["raw", model_name, "None", "0%"] + [f"{acc:.4f}" for acc in raw_accs]
+    )
 
-        # Cleanup raw model
-        raw_model.cpu()
-        del raw_model
-        torch.cuda.empty_cache()
+    # Cleanup raw model
+    raw_model.cpu()
+    del raw_model
+    torch.cuda.empty_cache()
 
-        # todo reorder and clean up loops, remove both
-        # Pruned model evaluation
-        print(f"\n=== Evaluating PRUNED models for: {model_path} ===")
-        for subtask_file in SHORT_NAMES.keys():
+    # Pruned model evaluation
+    print(f"\n=== Evaluating PRUNED models for: {MODEL} ===")
+    for subject in SUBJECTS:
+        for lang in LANGUAGES:
             for ratio in args.sparsity_ratios:
                 print(
-                    f"\n=== Pruning on subtask '{subtask_file}' at {ratio}% sparsity ==="
+                    f"\n=== Pruning on subject '{subject}' at {ratio}% sparsity ==="
                 )
 
                 # Initialize new model and tokenizer
-                base_model = load_model(model_path)
-                tokenizer = setup_tokenizer(model_path)
+                base_model = load_model(MODEL)
+                tokenizer = setup_tokenizer(MODEL)
 
                 # Prepare calibration data
-                trainloader, max_cal_len = prepare_calibration(
-                    tokenizer, subtask_file, args.train_num, args.seed
-                )
+                trainloader, max_cal_len = prepare_calibration(tokenizer, subject, lang, args.train_num, args.seed)
                 base_model.seqlen = max_cal_len
 
                 # Prune and evaluate
@@ -282,22 +260,21 @@ def main() -> None:
                 subtask_accs = evaluate_pruned_model(
                     base_model,
                     tokenizer,
-                    subtask_file,
-                    ratio,
-                    args.train_num,
+                    subject,
+                    lang,
                     args.test_num,
                     args.seed,
                 )
 
                 # Save results with new format
                 results_rows.append(
-                    ["pruned", model_name, SHORT_NAMES[subtask_file], f"{ratio}%"]
+                    ["pruned", model_name, subject, f"{ratio}%"]
                     + [f"{acc:.4f}" for acc in subtask_accs]
                 )
 
                 # Save model
                 save_path = save_pruned_model(
-                    base_model, subtask_file, ratio, model_path
+                    base_model, subject, ratio, MODEL
                 )
                 print(f"Saved pruned model to {save_path}")
 
@@ -307,7 +284,7 @@ def main() -> None:
                 torch.cuda.empty_cache()
 
     # Update save_results call with new header
-    header = ["type", "name", "pruned_on", "sparsity"] + list(SHORT_NAMES.values())
+    header = ["type", "name", "pruned_on", "sparsity"] + SUBJECTS
     save_results(results_rows, header=header)
     print(f"\nAll done! Results saved to '{CSV_NAME}'.")
     print("Rows:", len(results_rows))
