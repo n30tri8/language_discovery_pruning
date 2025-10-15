@@ -56,7 +56,6 @@ def format_prompt_for_test(record, shuffle_choices=True):
     return system_msg, user_msg, letter_map
 
 
-# todo cahnge
 def evaluate_model_on_dataset(
         model, tokenizer, subject_records, subject, device="cuda"
 ):
