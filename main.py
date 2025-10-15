@@ -12,8 +12,8 @@ from submodules.SparseLLM.model_utils import llama_sparsellm
 
 SUBJECTS = [
     "management",
-    "professional_accounting",
-    "marketing",
+    # "professional_accounting",
+    # "marketing",
 ]
 LANGUAGES = ["EN"]
 
@@ -121,6 +121,20 @@ def setup_environment(seed):
     torch.cuda.empty_cache()
 
 
+from huggingface_hub import HfFolder, HfApi
+
+
+def is_hf_authenticated() -> bool:
+    token = HfFolder.get_token()  # checks HF_TOKEN env and ~/.huggingface/token
+    if not token:
+        return False
+    try:
+        HfApi().whoami(token=token)
+        return True
+    except Exception:
+        return False
+
+
 def setup_tokenizer(model_name):
     """Initialize and configure tokenizer."""
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, cache_dir="./hf_cache")
@@ -132,8 +146,9 @@ def setup_tokenizer(model_name):
 def load_model(model_name):
     """Load model with appropriate settings."""
     model = AutoModelForCausalLM.from_pretrained(
-        model_name, torch_dtype=torch.float16
-    ).to(DEVICE)
+        model_name, dtype=torch.float16, cache_dir="./hf_cache", low_cpu_mem_usage=True
+    )
+    model = model.to(DEVICE)
     model.eval()
     return model
 
@@ -164,11 +179,11 @@ def evaluate_pruned_model(
     return subtask_accs
 
 
-def save_pruned_model(model, subtask_file, ratio, model_name):
+def save_pruned_model(model, subject, lang, ratio, model_name):
     """Save the pruned model to cache directory."""
     cache_dir = os.getenv("HF_HOME", os.path.expanduser("~/.cache/huggingface/hub"))
     save_name = (
-        f"{os.path.basename(model_name)}_{SUBJECTS[subtask_file]}_{int(ratio)}pct"
+        f"{os.path.basename(model_name)}_{subject}_{lang}_{int(ratio)}pct"
     )
     save_path = os.path.join(cache_dir, "models--" + save_name.replace("/", "--"))
     os.makedirs(save_path, exist_ok=True)
@@ -222,9 +237,9 @@ def main() -> None:
     print(f"\n=== Evaluating RAW model: {MODEL} ===")
     tokenizer = setup_tokenizer(MODEL)
     raw_model = load_model(MODEL)
+    model_name = os.path.basename(MODEL)
 
     raw_accs = evaluate_raw_model(raw_model, tokenizer, args.test_num, args.seed)
-    model_name = os.path.basename(MODEL)
     results_rows.append(
         ["raw", model_name, "None", "0%"] + [f"{acc:.4f}" for acc in raw_accs]
     )
@@ -273,7 +288,7 @@ def main() -> None:
 
                 # Save model
                 save_path = save_pruned_model(
-                    base_model, subject, ratio, MODEL
+                    base_model, subject, lang, ratio, MODEL
                 )
                 print(f"Saved pruned model to {save_path}")
 
