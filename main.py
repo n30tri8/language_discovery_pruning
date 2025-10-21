@@ -7,15 +7,17 @@ import torch
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from submodules.SparseLLM.datautils import SYSTEM_PROMPT, _build_user_message, get_mmlu
+from submodules.SparseLLM.datautils import SYSTEM_PROMPT, _build_user_message, get_mmlu, get_glue
 from submodules.SparseLLM.model_utils import llama_sparsellm
 
 SUBJECTS = [
-    "management",
-    # "professional_accounting",
-    # "marketing",
+    "philosophy",
 ]
 LANGUAGES = ["EN"]
+
+LINGUISTIC_BENCHMARKS = {
+    "EN GLUE": get_glue,
+}
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -119,20 +121,6 @@ def setup_environment(seed):
     torch.random.manual_seed(seed)
     torch.set_default_dtype(torch.float32)
     torch.cuda.empty_cache()
-
-
-from huggingface_hub import HfFolder, HfApi
-
-
-def is_hf_authenticated() -> bool:
-    token = HfFolder.get_token()  # checks HF_TOKEN env and ~/.huggingface/token
-    if not token:
-        return False
-    try:
-        HfApi().whoami(token=token)
-        return True
-    except Exception:
-        return False
 
 
 def setup_tokenizer(model_name):
@@ -296,6 +284,46 @@ def main() -> None:
                 base_model.cpu()
                 del base_model
                 torch.cuda.empty_cache()
+
+    # Additional evaluation for GLUE tasks
+    print(f"\n=== Evaluating PRUNED models on GLUE tasks for: {MODEL} ===")
+
+
+    for benchmark in LINGUISTIC_BENCHMARKS:
+        print(f"\n=== Pruning on linguistic benchmark '{benchmark}' ===")
+
+        # Initialize new model and tokenizer
+        base_model = load_model(MODEL)
+        tokenizer = setup_tokenizer(MODEL)
+
+        # Prepare data
+        benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]
+        benchmark_data = benchmark_loader(tokenizer)
+
+        # Prune and evaluate
+        llama_sparsellm(
+            base_model, benchmark_data, torch.device(DEVICE), args.sparsity_ratios[0] / 100.0
+        )
+
+        # Evaluate pruned model on GLUE benchmark
+        benchmark_results = evaluate_model_on_dataset(base_model, tokenizer, benchmark_data, benchmark)
+
+        # Save results with new format
+        results_rows.append(
+            ["pruned", model_name, benchmark, f"{args.sparsity_ratios[0]}%"]
+            + [f"{metric:.4f}" for metric in benchmark_results]
+        )
+
+        # Save model
+        save_path = save_pruned_model(
+            base_model, benchmark, "EN", args.sparsity_ratios[0], MODEL
+        )
+        print(f"Saved pruned model to {save_path}")
+
+        # Cleanup
+        base_model.cpu()
+        del base_model
+        torch.cuda.empty_cache()
 
     # Update save_results call with new header
     header = ["type", "name", "pruned_on", "sparsity"] + SUBJECTS
