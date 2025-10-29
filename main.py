@@ -201,15 +201,19 @@ def cross_benchmark_evaluation(test_num, sparsity_ratios, seed, run_env):
 
 if __name__ == "__main__":
     is_local = os.environ.get('LOCAL_RUN') is not None
+    is_local_docker = os.environ.get('LOCAL_DOCKER_RUN') is not None
     run_env = {}
     if is_local:
-        run_env['root_dir'] = os.path.dirname(os.path.abspath(__file__))
+        run_env['root_storage_dir'] = os.path.dirname(os.path.abspath(__file__))
         run_env['pruned_model_dir'] = os.path.expanduser("~/.cache/huggingface/hub")
+    elif is_local_docker:
+        run_env['root_storage_dir'] = "~/dev_root"
+        run_env['pruned_model_dir'] = "~/dev_hf_cache"
     else:
-        run_env['root_dir'] = "/gcs/language-discovery-pruning/"
-        run_env['pruned_model_dir'] = "/gcs/language-discovery-pruning/.cache/huggingface/hub"
-    run_env['benchmark_data_dir'] = os.path.join(run_env['root_dir'], "benchmark_data", "mmlu")
-    run_env['results_dir'] = os.path.join(run_env['root_dir'], "logs")
+        run_env['root_storage_dir'] = "/gcs/language-discovery-pruning/"
+        run_env['pruned_model_dir'] = os.path.join(run_env['root_storage_dir'], ".cache/huggingface/hub")
+    run_env['benchmark_data_dir'] = os.path.join(run_env['root_storage_dir'], "benchmark_data", "mmlu")
+    run_env['results_dir'] = os.path.join(run_env['root_storage_dir'], "logs")
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -233,4 +237,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     prune(args.train_num, args.test_num, args.sparsity_ratios, args.seed, run_env)
-    cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, args.seed, run_env)
+    # cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, args.seed, run_env)
