@@ -1,0 +1,23 @@
+# Exclude unnecessary files and directories
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.tmp
+*.log
+*.csv
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.md
+*.pdf
+*.DS_Store
+.idea/
+.vscode/
+.git/
+logs/
+plots/
+results/
+hf_cache/
+benchmark_data/
