@@ -89,7 +89,7 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
     #
     #             # Save model
     #             save_path = model_dir(
-    #                 run_env['pruned_model_dir'], MODEL, subject, lang, ratio
+    #                 run_env['model_dir'], MODEL, subject, lang, ratio
     #             )
     #             save_pruned_model(base_model, 'model_dir_func')
     #             print(f"Saved pruned model to {save_path}")
@@ -134,7 +134,7 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
             # todo refactor EN lang
             # Save model
             save_path = model_dir(
-                run_env['pruned_model_dir'], MODEL, benchmark, "EN", ratio
+                run_env['model_dir'], MODEL, benchmark, "EN", ratio
             )
             save_pruned_model(base_model, 'model_dir_func')
             print(f"Saved pruned model to {save_path}")
@@ -173,7 +173,7 @@ def cross_benchmark_evaluation(test_num, sparsity_ratios, run_env):
         subject_lang_iter = product(SUBJECTS, LANGUAGES)
         for subject, lang in subject_lang_iter:
             load_path = model_dir(
-                run_env['pruned_model_dir'], MODEL, linguistic_pruned, lang, sparsity_ratios[0]
+                run_env['model_dir'], MODEL, linguistic_pruned, lang, sparsity_ratios[0]
             )
             pruned_model, _ = load_pruned_model(load_path, device=DEVICE)
             print(f"\n=== Loaded pruned model from {load_path} ===")
@@ -202,13 +202,13 @@ if __name__ == "__main__":
     run_env = {}
     if is_local:
         run_env['root_storage_dir'] = os.path.dirname(os.path.abspath(__file__))
-        run_env['pruned_model_dir'] = os.path.expanduser("~/.cache/huggingface/hub")
+        run_env['model_dir'] = os.path.expanduser("~/.cache/huggingface/hub")
     elif is_local_docker:
         run_env['root_storage_dir'] = "/app/dev_root"
-        run_env['pruned_model_dir'] = "/app/dev_hf_cache"
+        run_env['model_dir'] = "/app/dev_hf_cache"
     else:
         run_env['root_storage_dir'] = "/gcs/language-discovery-pruning/"
-        run_env['pruned_model_dir'] = os.path.join(run_env['root_storage_dir'], ".cache/huggingface/hub")
+        run_env['model_dir'] = os.path.join(run_env['root_storage_dir'], ".cache/huggingface/hub")
     run_env['benchmark_data_dir'] = os.path.join(run_env['root_storage_dir'], "benchmark_data", "mmlu")
     run_env['results_dir'] = os.path.join(run_env['root_storage_dir'], "logs")
 
