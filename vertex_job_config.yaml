@@ -1,0 +1,16 @@
+# config.yaml
+workerPoolSpecs:
+  machineSpec:
+    machineType: n2-standard-16
+#    acceleratorType: ACCELERATOR_TYPE
+#    acceleratorCount: ACCELERATOR_COUNT
+  replicaCount: 1
+  containerSpec:
+    imageUri: us-west1-docker.pkg.dev/sonorous-treat-476419-s8/main-docker/pruning
+    env:
+    - name: HF_TOKEN
+      value: "hf_..."
+#    command: ["python", "your_script.py"] # Optional: Override container's ENTRYPOINT
+#    args: ["--arg1", "value1"] # Optional: Override container's CMD
+
+

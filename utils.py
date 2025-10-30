@@ -29,7 +29,8 @@ def setup_environment(seed, hf_cache_dir):
     torch.cuda.empty_cache()
 
     # login to huggingface hub if token present
-    login(token=os.getenv("HF_TOKEN"))
+    hf_token = os.getenv("HF_TOKEN")
+    login(token=hf_token)
     HF_CACHE_DIR = hf_cache_dir
 
 
