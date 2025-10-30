@@ -12,12 +12,12 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 HF_CACHE_DIR = "./hf_cache"
 
 
-def setup_environment(seed, model_dir):
+def setup_environment(seed, hf_cache_dir):
     """Initialize environment settings and (optionally) set the HF cache dir.
 
     Args:
         seed (int): random seed to set for numpy, random and torch.
-        model_dir (str|None): path to use as the HuggingFace cache dir. If provided,
+        hf_cache_dir (str|None): path to use as the HuggingFace cache dir. If provided,
             this will override the module default HF_CACHE_DIR used by tokenizer/model loaders.
     """
     global HF_CACHE_DIR
@@ -30,7 +30,7 @@ def setup_environment(seed, model_dir):
 
     # login to huggingface hub if token present
     login(token=os.getenv("HF_TOKEN"))
-    HF_CACHE_DIR = model_dir
+    HF_CACHE_DIR = hf_cache_dir
 
 
 def setup_tokenizer(model_name):
