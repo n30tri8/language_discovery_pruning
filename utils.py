@@ -1,8 +1,10 @@
 import csv
 import os
+import random
 
 import numpy as np
 import torch
+from huggingface_hub import login
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -11,9 +13,13 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 def setup_environment(seed):
     """Initialize environment settings."""
     np.random.seed(seed)
+    random.seed(seed)
     torch.random.manual_seed(seed)
     torch.set_default_dtype(torch.float32)
     torch.cuda.empty_cache()
+
+    login(token=os.getenv("HF_TOKEN"))
+    # hf_cache_dir =
 
 
 def setup_tokenizer(model_name):

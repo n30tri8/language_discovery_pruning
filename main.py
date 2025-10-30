@@ -25,8 +25,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODEL = "meta-llama/Llama-3.2-3b-Instruct"
 
 
-def prune(train_num, test_num, sparsity_ratios, seed, run_env):
-    setup_environment(seed)
+def prune(train_num, test_num, sparsity_ratios, run_env):
     results_rows = []
 
     logs_file = os.path.join(run_env['results_dir'], "pruning_logs.csv")
@@ -38,7 +37,7 @@ def prune(train_num, test_num, sparsity_ratios, seed, run_env):
     raw_model = load_raw_model(MODEL)
     model_name = os.path.basename(MODEL)
 
-    raw_accs = evaluate_raw_model_on_mmlu(raw_model, tokenizer, run_env['benchmark_data_dir'], test_num, seed, SUBJECTS,
+    raw_accs = evaluate_raw_model_on_mmlu(raw_model, tokenizer, run_env['benchmark_data_dir'], test_num, SUBJECTS,
                                           LANGUAGES)
     results_rows.append(
         ["raw", MODEL, "None", "0%"] + [f"{acc:.4f}" for acc in raw_accs]
@@ -153,8 +152,7 @@ def prune(train_num, test_num, sparsity_ratios, seed, run_env):
     print("Columns:", len(header))
 
 
-def cross_benchmark_evaluation(test_num, sparsity_ratios, seed, run_env):
-    setup_environment(seed)
+def cross_benchmark_evaluation(test_num, sparsity_ratios, run_env):
     tokenizer = setup_tokenizer(MODEL)
 
     logs_file = os.path.join(run_env['results_dir'], "cross_benchmark_logs.csv")
@@ -180,8 +178,7 @@ def cross_benchmark_evaluation(test_num, sparsity_ratios, seed, run_env):
             pruned_model, _ = load_pruned_model(load_path, device=DEVICE)
             print(f"\n=== Loaded pruned model from {load_path} ===")
             subtask_accs = evaluate_pruned_model(pruned_model, tokenizer, run_env['benchmark_data_dir'], subject, lang,
-                                                 test_num,
-                                                 seed)
+                                                 test_num)
             print(
                 f"Evaluation results on subject '{subject}' and language '{lang}': "
                 + ", ".join([f"{acc:.4f}" for acc in subtask_accs])
@@ -207,8 +204,8 @@ if __name__ == "__main__":
         run_env['root_storage_dir'] = os.path.dirname(os.path.abspath(__file__))
         run_env['pruned_model_dir'] = os.path.expanduser("~/.cache/huggingface/hub")
     elif is_local_docker:
-        run_env['root_storage_dir'] = "~/dev_root"
-        run_env['pruned_model_dir'] = "~/dev_hf_cache"
+        run_env['root_storage_dir'] = "/app/dev_root"
+        run_env['pruned_model_dir'] = "/app/dev_hf_cache"
     else:
         run_env['root_storage_dir'] = "/gcs/language-discovery-pruning/"
         run_env['pruned_model_dir'] = os.path.join(run_env['root_storage_dir'], ".cache/huggingface/hub")
@@ -236,5 +233,6 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
-    prune(args.train_num, args.test_num, args.sparsity_ratios, args.seed, run_env)
-    # cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, args.seed, run_env)
+    setup_environment(args.seed)
+    prune(args.train_num, args.test_num, args.sparsity_ratios, run_env)
+    cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)

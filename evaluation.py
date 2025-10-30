@@ -61,22 +61,21 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, device
             correct += 1
     return correct / len(subject_records)
 
-def evaluate_raw_model_on_mmlu(model, tokenizer, benchmark_data_dir, test_num, seed, subjects, languages):
+def evaluate_raw_model_on_mmlu(model, tokenizer, benchmark_data_dir, test_num, subjects, languages):
     """Evaluate the raw model on all subtasks."""
     subtask_accs = []
     for subject in subjects:
         for lang in languages:
-            _, test_recs = get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=0, test_num=test_num,
-                                    seed=seed)
+            _, test_recs = get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=0, test_num=test_num)
             acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, device=DEVICE)
             subtask_accs.append(acc)
     return subtask_accs
 
 # todo refactor, similar to another function above
-def evaluate_pruned_model(model, tokenizer, benchmark_data_dir, subject, lang, test_num, seed):
+def evaluate_pruned_model(model, tokenizer, benchmark_data_dir, subject, lang, test_num):
     """Evaluate a pruned model on all subtasks."""
     subtask_accs = []
-    _, test_recs = get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=0, test_num=test_num, seed=seed)
+    _, test_recs = get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=0, test_num=test_num)
     acc = evaluate_model_on_dataset(
         model, tokenizer, test_recs, subject, device=DEVICE
     )
