@@ -1,3 +1,4 @@
+# TODO these tagging is not working
 # Use build args for image metadata
 ARG IMAGE_NAME=language_discovery_pruning
 ARG IMAGE_VERSION=0.1
@@ -20,8 +21,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the project files into the container
 COPY . .
-
-ENV LOCAL_DOCKER_RUN=1
 
 # Command to run the application
 ENTRYPOINT ["python", "main.py"]
