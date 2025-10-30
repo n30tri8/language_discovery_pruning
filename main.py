@@ -233,6 +233,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
-    setup_environment(args.seed)
+    # pass the model_dir from run_env into setup_environment so HF cache_dir is set
+    setup_environment(args.seed, run_env['model_dir'])
     prune(args.train_num, args.test_num, args.sparsity_ratios, run_env)
     cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)
