@@ -13,3 +13,4 @@ COPY . .
 
 # Command to run the application
 ENTRYPOINT ["python", "main.py"]
+CMD ["--test_num", "400", "--sparsity_ratios", "50"]

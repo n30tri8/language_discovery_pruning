@@ -12,7 +12,7 @@ from submodules.SparseLLM.model_utils import llama_sparsellm
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model, \
     load_pruned_model, model_dir
 
-SUBJECTS = ["philosophy"]
+SUBJECTS = ["philosophy", "professional_law", "high_school_mathematics", "professional_psychology"]
 LANGUAGES = ["EN"]
 
 LINGUISTIC_BENCHMARKS = {
@@ -22,7 +22,8 @@ LINGUISTIC_BENCHMARKS = {
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Add a simple module-level model variable to replace the argparse --models option
-MODEL = "meta-llama/Llama-3.2-3b-Instruct"
+# Candids: "meta-llama/Llama-3.1-8B-Instruct" \ "meta-llama/Llama-3.2-11B-Vision-Instruct" \ "meta-llama/Llama-3.2-3b-Instruct"
+MODEL = "meta-llama/Llama-3.1-8B-Instruct"
 
 
 def prune(train_num, test_num, sparsity_ratios, run_env):
@@ -233,5 +234,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     setup_environment(args.seed, run_env['model_dir'])
-    # prune(args.train_num, args.test_num, args.sparsity_ratios, run_env)
+    prune(args.train_num, args.test_num, args.sparsity_ratios, run_env)
     cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)
+
