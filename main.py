@@ -5,7 +5,7 @@ from itertools import product
 
 import torch
 
-from evaluation import evaluate_raw_model_on_mmlu, evaluate_pruned_model
+from mmlu_evaluation import evaluate_raw_model_on_mmlu, evaluate_pruned_model
 from pruning import prepare_calibration
 from submodules.SparseLLM.datautils import get_glue
 from submodules.SparseLLM.model_utils import llama_sparsellm
@@ -136,7 +136,7 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
             save_path = model_dir(
                 run_env['model_dir'], MODEL, benchmark, "EN", ratio
             )
-            save_pruned_model(base_model, 'model_dir_func')
+            save_pruned_model(base_model, save_path)
             print(f"Saved pruned model to {save_path}")
 
             # Cleanup
@@ -219,14 +219,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--test_num",
         type=int,
-        default=5,
+        default=20,
         help="Test set size per subtask, if negative use all.",
     )
     parser.add_argument(
         "--sparsity_ratios",
         nargs="+",
         type=float,
-        # default=[25, 50, 75],
         default=[50],
         help="List of integer percentages for unstructured pruning, e.g. 25 50 75.",
     )
@@ -234,5 +233,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     setup_environment(args.seed, run_env['model_dir'])
-    prune(args.train_num, args.test_num, args.sparsity_ratios, run_env)
+    # prune(args.train_num, args.test_num, args.sparsity_ratios, run_env)
     cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)

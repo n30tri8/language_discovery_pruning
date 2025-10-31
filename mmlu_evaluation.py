@@ -18,14 +18,13 @@ def extract_answer(text: str) -> str:
     for i in range(len(text) - 1, -1, -1):
         if text[i] in ["A", "B", "C", "D"]:
             return text[i]
-    return "A"  # default
+    return " "  # default if nothing found
 
 def format_prompt_for_test(record, shuffle_choices=True):
     system_msg = SYSTEM_PROMPT.format(field=record.get("subject"))
     user_msg, letter_map = _build_user_message(record, shuffle=shuffle_choices)
     return system_msg, user_msg, letter_map
 
-# todo by default, extract_answer returns 'A' if nothing is found, which may skew results
 def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, device="cuda"):
     """
     Evaluate a *finetuned or pruned* model on a list of leftover test records.
@@ -36,7 +35,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, device
     model.eval()
     correct = 0
     for rec in tqdm(subject_records, desc=f"Evaluating on {subject}", unit="record"):
-        gold = rec.get("answer", "A")
+        correct_answer = rec.get("answer")
         system_msg, user_msg, letter_map = format_prompt_for_test(rec, shuffle_choices=True)
         messages = [
             {"role": "system", "content": system_msg},
@@ -47,7 +46,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, device
         model = model.to(device)
         out = model.generate(
             **inputs,
-            max_length=inputs["input_ids"].shape[1] + 4,
+            max_new_tokens=12,
             do_sample=False,
             temperature=1.0,
             pad_token_id=tokenizer.pad_token_id,
@@ -55,9 +54,9 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, device
         )
         gen_part = out[0][inputs["input_ids"].shape[1]:]
         gen_text = tokenizer.decode(gen_part, skip_special_tokens=True)
-        raw_letter = extract_answer(gen_text)
-        mapped_letter = letter_map.get(raw_letter, "A")
-        if mapped_letter == gold:
+        model_extracted_answer = extract_answer(gen_text)
+        mapped_answer = letter_map.get(model_extracted_answer)
+        if mapped_answer == correct_answer:
             correct += 1
     return correct / len(subject_records)
 
