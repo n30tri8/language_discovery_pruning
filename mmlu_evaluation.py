@@ -68,6 +68,7 @@ def evaluate_raw_model_on_mmlu(model, tokenizer, benchmark_data_dir, test_num, s
             _, test_recs = get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=0, test_num=test_num)
             acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, device=DEVICE)
             subtask_accs.append(acc)
+            print(f"\n=== Evaluated subject={subject}, lang={lang}, accuracy={acc:.4f} ===")
     return subtask_accs
 
 # todo refactor, similar to another function above

@@ -36,6 +36,7 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
     print(f"\n=== Evaluating RAW model: {MODEL} ===")
     tokenizer = setup_tokenizer(MODEL)
     raw_model = load_raw_model(MODEL)
+    print(f"\n=== Loaded RAW model: {MODEL} ===")
     model_name = os.path.basename(MODEL)
 
     raw_accs = evaluate_raw_model_on_mmlu(raw_model, tokenizer, run_env['benchmark_data_dir'], test_num, SUBJECTS,
