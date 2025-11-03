@@ -19,5 +19,3 @@ __pycache__/
 logs/
 plots/
 results/
-hf_cache/
-benchmark_data/

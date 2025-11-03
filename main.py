@@ -202,6 +202,7 @@ if __name__ == "__main__":
     is_local = os.environ.get('LOCAL_RUN') is not None
     is_local_docker = os.environ.get('LOCAL_DOCKER_RUN') is not None
     run_env = {}
+    project_dir = os.path.dirname(os.path.abspath(__file__))
     if is_local:
         run_env['root_storage_dir'] = os.path.dirname(os.path.abspath(__file__))
         run_env['model_dir'] = os.path.expanduser("~/.cache/huggingface/hub")
@@ -211,7 +212,8 @@ if __name__ == "__main__":
     else:
         run_env['root_storage_dir'] = "/gcs/language-discovery-pruning/"
         run_env['model_dir'] = os.path.join(run_env['root_storage_dir'], ".cache/huggingface/hub")
-    run_env['benchmark_data_dir'] = os.path.join(run_env['root_storage_dir'], "benchmark_data", "mmlu")
+    run_env['raw_model_dir'] = os.path.join(project_dir, "raw_model")
+    run_env['benchmark_data_dir'] = os.path.join(project_dir, "benchmark_data", "mmlu")
     run_env['results_dir'] = os.path.join(run_env['root_storage_dir'], "logs")
 
     parser = argparse.ArgumentParser()
@@ -234,7 +236,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
-    setup_environment(args.seed, run_env['model_dir'])
+    setup_environment(args.seed, run_env['raw_model_dir'])
     prune(args.train_num, args.test_num, args.sparsity_ratios, run_env)
     cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)
 

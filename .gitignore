@@ -1,6 +1,7 @@
 results.json
 *.jsonl
 benchmark_data
-hf_cache
+raw_model
 .idea
 logs
+raw_model

@@ -6,21 +6,22 @@ import numpy as np
 import torch
 from huggingface_hub import login
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers.utils import logging as transformers_logging
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # Default cache dir; can be overridden by setup_environment
-HF_CACHE_DIR = "./hf_cache"
+RAW_MODEL_DIR = "raw_model"
 
 
-def setup_environment(seed, hf_cache_dir):
+def setup_environment(seed, raw_model_dir):
     """Initialize environment settings and (optionally) set the HF cache dir.
 
     Args:
         seed (int): random seed to set for numpy, random and torch.
-        hf_cache_dir (str|None): path to use as the HuggingFace cache dir. If provided,
+        raw_model_dir (str|None): path to use as the raw model dir. If provided,
             this will override the module default HF_CACHE_DIR used by tokenizer/model loaders.
     """
-    global HF_CACHE_DIR
+    global RAW_MODEL_DIR
 
     np.random.seed(seed)
     random.seed(seed)
@@ -31,12 +32,12 @@ def setup_environment(seed, hf_cache_dir):
     # login to huggingface hub if token present
     hf_token = os.getenv("HF_TOKEN")
     login(token=hf_token)
-    HF_CACHE_DIR = hf_cache_dir
+    RAW_MODEL_DIR = raw_model_dir
 
 
 def setup_tokenizer(model_name):
     """Initialize and configure tokenizer."""
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, cache_dir=HF_CACHE_DIR)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, cache_dir=RAW_MODEL_DIR)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token_id = tokenizer.eos_token_id or 0
     return tokenizer
@@ -44,9 +45,17 @@ def setup_tokenizer(model_name):
 
 def load_raw_model(model_name):
     """Load model with appropriate settings."""
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name, dtype=torch.float16, cache_dir=HF_CACHE_DIR, low_cpu_mem_usage=True
-    )
+    # todo remove this temporary logging level
+    transformers_logging.set_verbosity_info()  # shows INFO-level logs for this call only
+
+    model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=RAW_MODEL_DIR,
+                                                 torch_dtype="auto",
+                                                 # Recommended for faster loading and better memory use
+                                                 device_map="auto"  # Recommended for GPU usage
+                                                 )
+
+    transformers_logging.set_verbosity_warning()  # shows INFO-level logs for this call only
+
     model = model.to(DEVICE)
     model.eval()
     return model
