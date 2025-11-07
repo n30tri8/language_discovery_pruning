@@ -18,9 +18,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Application
-FROM raw_model AS app
+FROM lang_discovery/raw_model/llama3.1_8b AS app
 # Copy the project files into the container
-COPY analyze_pruning.py main.py mmlu_evaluation.py pruning.py utils.py benchmark_data submodules ./
+COPY benchmark_data ./benchmark_data
+COPY submodules ./submodules
+COPY main.py mmlu_evaluation.py pruning.py utils.py ./
 
 # Command to run the application
 ENTRYPOINT ["python", "main.py"]
