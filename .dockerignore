@@ -19,3 +19,5 @@ __pycache__/
 logs/
 plots/
 results/
+pruned_models/
+.venv/
