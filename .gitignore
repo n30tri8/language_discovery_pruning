@@ -5,3 +5,6 @@ raw_model
 .idea
 logs
 raw_model
+pruned_models
+.vscode/
+.venv/
