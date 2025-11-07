@@ -1,6 +1,7 @@
 import csv
 import os
 import random
+import threading
 
 import numpy as np
 import torch
@@ -49,9 +50,8 @@ def load_raw_model(model_name):
     transformers_logging.set_verbosity_info()  # shows INFO-level logs for this call only
 
     model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=RAW_MODEL_DIR,
-                                                 torch_dtype="auto",
+                                                 dtype=torch.float32,
                                                  # Recommended for faster loading and better memory use
-                                                 device_map="auto"  # Recommended for GPU usage
                                                  )
 
     transformers_logging.set_verbosity_warning()  # shows INFO-level logs for this call only
@@ -83,6 +83,22 @@ def save_pruned_model(model, save_path):
     os.makedirs(save_path, exist_ok=True)
     model.save_pretrained(save_path)
     return save_path
+
+
+def save_pruned_model_async(model, save_path):
+    """Save the pruned model asynchronously to avoid blocking the main thread."""
+
+    def _save():
+        os.makedirs(save_path, exist_ok=True)
+        print(f"[INFO] Saving pruned model to {save_path}...")
+        model.save_pretrained(save_path)
+        print(f"[INFO] ✅ Model saved: {save_path}")
+
+    # Launch background thread
+    thread = threading.Thread(target=_save, daemon=False)
+    thread.start()
+
+    return thread  # Return thread if caller wants to join()
 
 
 def load_pruned_model(load_path, device=DEVICE):
