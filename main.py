@@ -9,7 +9,7 @@ from mmlu_evaluation import evaluate_raw_model_on_mmlu, evaluate_pruned_model
 from pruning import prepare_calibration
 from submodules.SparseLLM.datautils import get_glue
 from submodules.SparseLLM.model_utils import llama_sparsellm
-from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model, \
+from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model_async, \
     load_pruned_model, model_dir
 
 SUBJECTS = ["philosophy", "professional_law", "high_school_mathematics", "professional_psychology"]
@@ -104,6 +104,8 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
     # Additional evaluation for GLUE tasks
     print(f"\n=== Evaluating PRUNED models on Linguistic benchmarks for: {MODEL} ===")
 
+    save_threads = []
+
     for benchmark in LINGUISTIC_BENCHMARKS:
         for ratio in sparsity_ratios:
             print(f"\n=== Pruning on linguistic benchmark '{benchmark}' ===")
@@ -138,8 +140,9 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
             save_path = model_dir(
                 run_env['model_dir'], MODEL, benchmark, "EN", ratio
             )
-            save_pruned_model(base_model, save_path)
-            print(f"Saved pruned model to {save_path}")
+            thread = save_pruned_model_async(base_model, save_path)
+            save_threads.append(thread)
+            print(f"Saving pruned model to {save_path} in a thread: {thread}")
 
             # Cleanup
             base_model.cpu()
@@ -152,6 +155,9 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
     print(f"\nAll done! Results saved to '{logs_file}'.")
     print("Rows:", len(results_rows))
     print("Columns:", len(header))
+
+    for thread in save_threads:
+        thread.join()
 
 
 def cross_benchmark_evaluation(test_num, sparsity_ratios, run_env):
@@ -208,7 +214,7 @@ if __name__ == "__main__":
         run_env['model_dir'] = os.path.expanduser("~/.cache/huggingface/hub")
     elif is_local_docker:
         run_env['root_storage_dir'] = "/app/dev_root"
-        run_env['model_dir'] = "/app/dev_hf_cache"
+        run_env['model_dir'] = "/app/dev_pruned_models"
     else:
         run_env['root_storage_dir'] = "/gcs/language-discovery-pruning/"
         run_env['model_dir'] = os.path.join(run_env['root_storage_dir'], ".cache/huggingface/hub")
