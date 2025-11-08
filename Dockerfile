@@ -6,13 +6,6 @@ WORKDIR /app
 
 COPY raw_model/ raw_model/
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends unzip && \
-    unzip raw_model/models--meta-llama--Llama-3.1-8B-Instruct.zip -d raw_model/ && \
-    rm raw_model/models--meta-llama--Llama-3.1-8B-Instruct.zip && \
-    apt-get purge -y --auto-remove unzip && \
-    rm -rf /var/lib/apt/lists/*
-
 # Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
