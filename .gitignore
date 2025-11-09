@@ -8,3 +8,5 @@ raw_model
 pruned_models
 .vscode/
 .venv/
+results/*
+!results/.gitkeep
