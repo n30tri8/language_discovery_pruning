@@ -1,29 +1,35 @@
 import argparse
 import csv
 import os
-from itertools import product
+from functools import partial
 
 import torch
 
-from mmlu_evaluation import evaluate_raw_model_on_mmlu, evaluate_pruned_model
-from pruning import prepare_calibration
-from submodules.SparseLLM.datautils import get_glue
+from mmlu_evaluation import evaluate_pruned_model
+from submodules.SparseLLM.datautils import get_glue, get_xglue
 from submodules.SparseLLM.model_utils import llama_sparsellm
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model_async, \
     load_pruned_model, model_dir
 
 SUBJECTS = ["philosophy", "professional_law", "high_school_mathematics", "professional_psychology"]
-LANGUAGES = ["EN"]
 
 LINGUISTIC_BENCHMARKS = {
-    "EN GLUE": get_glue,
+    # "EN GLUE": {
+    #     "lang": "en",
+    #     "loader": get_glue
+    # },
+    "XGLUE_DE": {
+        "lang": "de",
+        "loader": get_xglue
+    }
 }
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Add a simple module-level model variable to replace the argparse --models option
 # Candids: "meta-llama/Llama-3.1-8B-Instruct" \ "meta-llama/Llama-3.2-11B-Vision-Instruct" \ "meta-llama/Llama-3.2-3b-Instruct"
-MODEL = "meta-llama/Llama-3.1-8B-Instruct"
+# MODEL = "meta-llama/Llama-3.1-8B-Instruct"
+MODEL = "meta-llama/Llama-3.2-3b-Instruct"
 
 
 def prune(train_num, test_num, sparsity_ratios, run_env):
@@ -33,22 +39,23 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
 
     # iterate over the single configured model
     # Raw model evaluation
-    print(f"\n=== Evaluating RAW model: {MODEL} ===")
-    tokenizer = setup_tokenizer(MODEL)
-    raw_model = load_raw_model(MODEL)
-    print(f"\n=== Loaded RAW model: {MODEL} ===")
-    model_name = os.path.basename(MODEL)
-
-    raw_accs = evaluate_raw_model_on_mmlu(raw_model, tokenizer, run_env['benchmark_data_dir'], test_num, SUBJECTS,
-                                          LANGUAGES)
-    results_rows.append(
-        ["raw", MODEL, "None", "0%"] + [f"{acc:.4f}" for acc in raw_accs]
-    )
-
-    # Cleanup raw model
-    raw_model.cpu()
-    del raw_model
-    torch.cuda.empty_cache()
+    # todo uncomment
+    # print(f"\n=== Evaluating RAW model: {MODEL} ===")
+    # tokenizer = setup_tokenizer(MODEL)
+    # raw_model = load_raw_model(MODEL)
+    # print(f"\n=== Loaded RAW model: {MODEL} ===")
+    # model_name = os.path.basename(MODEL)
+    #
+    # raw_accs = evaluate_raw_model_on_mmlu(raw_model, tokenizer, run_env['benchmark_data_dir'], test_num, SUBJECTS,
+    #                                       LANGUAGES)
+    # results_rows.append(
+    #     ["raw", MODEL, "None", "0%"] + [f"{acc:.4f}" for acc in raw_accs]
+    # )
+    #
+    # # Cleanup raw model
+    # raw_model.cpu()
+    # del raw_model
+    # torch.cuda.empty_cache()
 
     # Pruned model evaluation
     # print(f"\n=== Evaluating PRUNED models for: {MODEL} ===")
@@ -115,7 +122,7 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
             tokenizer = setup_tokenizer(MODEL)
 
             # Prepare data
-            benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]
+            benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
             benchmark_data, max_cal_len = benchmark_loader(tokenizer)
 
             base_model.seqlen = max_cal_len
@@ -135,10 +142,9 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
             #     + [f"{metric:.4f}" for metric in benchmark_results]
             # )
 
-            # todo refactor EN lang
             # Save model
             save_path = model_dir(
-                run_env['model_dir'], MODEL, benchmark, "EN", ratio
+                run_env['model_dir'], MODEL, benchmark, LINGUISTIC_BENCHMARKS[benchmark]['lang'], ratio
             )
             thread = save_pruned_model_async(base_model, save_path)
             save_threads.append(thread)
@@ -178,8 +184,8 @@ def cross_benchmark_evaluation(test_num, sparsity_ratios, run_env):
         ])
 
     for linguistic_pruned in LINGUISTIC_BENCHMARKS:
-        subject_lang_iter = product(SUBJECTS, LANGUAGES)
-        for subject, lang in subject_lang_iter:
+        lang = LINGUISTIC_BENCHMARKS[linguistic_pruned]['lang']
+        for subject in SUBJECTS:
             load_path = model_dir(
                 run_env['model_dir'], MODEL, linguistic_pruned, lang, sparsity_ratios[0]
             )
@@ -202,6 +208,17 @@ def cross_benchmark_evaluation(test_num, sparsity_ratios, run_env):
                     acc,
                 ])
     fout.close()
+
+
+def apply_benchmark_dir(proj_dir):
+    xglue_base_dir = os.path.join(proj_dir, "benchmark_data", "xglue_dataset")
+    for benchmark in LINGUISTIC_BENCHMARKS:
+        lang = LINGUISTIC_BENCHMARKS[benchmark]['lang']
+        loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
+        if loader is get_xglue:
+            partial_get_xglue = partial(get_xglue, base_dir=xglue_base_dir, lang=lang)
+
+            LINGUISTIC_BENCHMARKS[benchmark]['loader'] = partial_get_xglue
 
 
 if __name__ == "__main__":
@@ -243,6 +260,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     setup_environment(args.seed, run_env['raw_model_dir'])
-    prune(args.train_num, args.test_num, args.sparsity_ratios, run_env)
-    cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)
+    apply_benchmark_dir(project_dir)
 
+    prune(args.train_num, args.test_num, args.sparsity_ratios, run_env)
+    # cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)
