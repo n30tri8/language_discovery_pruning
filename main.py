@@ -28,8 +28,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Add a simple module-level model variable to replace the argparse --models option
 # Candids: "meta-llama/Llama-3.1-8B-Instruct" \ "meta-llama/Llama-3.2-11B-Vision-Instruct" \ "meta-llama/Llama-3.2-3b-Instruct"
-# MODEL = "meta-llama/Llama-3.1-8B-Instruct"
-MODEL = "meta-llama/Llama-3.2-3b-Instruct"
+MODEL = "meta-llama/Llama-3.1-8B-Instruct"
 
 
 def prune(train_num, test_num, sparsity_ratios, run_env):
@@ -56,57 +55,6 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
     # raw_model.cpu()
     # del raw_model
     # torch.cuda.empty_cache()
-
-    # Pruned model evaluation
-    # print(f"\n=== Evaluating PRUNED models for: {MODEL} ===")
-    # for subject in SUBJECTS:
-    #     for lang in LANGUAGES:
-    #         for ratio in sparsity_ratios:
-    #             print(
-    #                 f"\n=== Pruning on subject '{subject}' at {ratio}% sparsity ==="
-    #             )
-    #
-    #             # Initialize new model and tokenizer
-    #             base_model = load_raw_model(MODEL)
-    #             tokenizer = setup_tokenizer(MODEL)
-    #
-    #             # Prepare calibration data
-    #             trainloader, max_cal_len = prepare_calibration(tokenizer, run_env['benchmark_data_dir'], subject, lang,
-    #                                                            train_num, seed)
-    #             base_model.seqlen = max_cal_len
-    #
-    #             # Prune and evaluate
-    #             llama_sparsellm(
-    #                 base_model, trainloader, torch.device(DEVICE), ratio / 100.0
-    #             )
-    #
-    #             subtask_accs = evaluate_pruned_model(
-    #                 base_model,
-    #                 tokenizer,
-    #                 run_env['benchmark_data_dir'],
-    #                 subject,
-    #                 lang,
-    #                 test_num,
-    #                 seed,
-    #             )
-    #
-    #             # Save results with new format
-    #             results_rows.append(
-    #                 ["pruned", model_name, subject, f"{ratio}%"]
-    #                 + [f"{acc:.4f}" for acc in subtask_accs]
-    #             )
-    #
-    #             # Save model
-    #             save_path = model_dir(
-    #                 run_env['model_dir'], MODEL, subject, lang, ratio
-    #             )
-    #             save_pruned_model(base_model, 'model_dir_func')
-    #             print(f"Saved pruned model to {save_path}")
-    #
-    #             # Cleanup
-    #             base_model.cpu()
-    #             del base_model
-    #             torch.cuda.empty_cache()
 
     # Additional evaluation for GLUE tasks
     print(f"\n=== Evaluating PRUNED models on Linguistic benchmarks for: {MODEL} ===")
