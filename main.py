@@ -56,9 +56,6 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
     # del raw_model
     # torch.cuda.empty_cache()
 
-    # Additional evaluation for GLUE tasks
-    print(f"\n=== Evaluating PRUNED models on Linguistic benchmarks for: {MODEL} ===")
-
     save_threads = []
 
     for benchmark in LINGUISTIC_BENCHMARKS:
