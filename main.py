@@ -5,8 +5,8 @@ from functools import partial
 
 import torch
 
-from mmlu_evaluation import evaluate_pruned_model
-from submodules.SparseLLM.datautils import get_glue, get_xglue
+from mmlu_evaluation import evaluate_model
+from submodules.SparseLLM.datautils import get_xglue
 from submodules.SparseLLM.model_utils import llama_sparsellm
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model_async, \
     load_pruned_model, model_dir
@@ -31,30 +31,33 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODEL = "meta-llama/Llama-3.1-8B-Instruct"
 
 
+def evaluate_raw_model(test_num, run_env):
+    results_rows = []
+
+    logs_file = os.path.join(run_env['results_dir'], "raw_model_eval.csv")
+    print(f"\n=== Evaluating RAW model: {MODEL} ===")
+    tokenizer = setup_tokenizer(MODEL)
+    raw_model = load_raw_model(MODEL)
+    languages = [LINGUISTIC_BENCHMARKS[b]['lang'] for b in LINGUISTIC_BENCHMARKS]
+    for subject in SUBJECTS:
+        for lang in languages:
+            subtask_acc = evaluate_model(raw_model, tokenizer, run_env['benchmark_data_dir'], subject, lang, test_num)
+            results_rows.append([MODEL, subject, lang, f"{subtask_acc:.4f}"])
+
+    # Cleanup raw model
+    raw_model.cpu()
+    del raw_model
+    torch.cuda.empty_cache()
+
+    header = ["model", "subject", "lang", "subtask_acc"]
+    save_results(logs_file, results_rows, SUBJECTS, header=header)
+    print(f"\nRaw model evaluation done. Results saved to '{logs_file}'.")
+
+
 def prune(train_num, test_num, sparsity_ratios, run_env):
     results_rows = []
 
     logs_file = os.path.join(run_env['results_dir'], "pruning_logs.csv")
-
-    # iterate over the single configured model
-    # Raw model evaluation
-    # todo uncomment
-    # print(f"\n=== Evaluating RAW model: {MODEL} ===")
-    # tokenizer = setup_tokenizer(MODEL)
-    # raw_model = load_raw_model(MODEL)
-    # print(f"\n=== Loaded RAW model: {MODEL} ===")
-    # model_name = os.path.basename(MODEL)
-    #
-    # raw_accs = evaluate_raw_model_on_mmlu(raw_model, tokenizer, run_env['benchmark_data_dir'], test_num, SUBJECTS,
-    #                                       LANGUAGES)
-    # results_rows.append(
-    #     ["raw", MODEL, "None", "0%"] + [f"{acc:.4f}" for acc in raw_accs]
-    # )
-    #
-    # # Cleanup raw model
-    # raw_model.cpu()
-    # del raw_model
-    # torch.cuda.empty_cache()
 
     save_threads = []
 
@@ -101,6 +104,7 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
             torch.cuda.empty_cache()
 
     # Update save_results call with new header
+    # todo update header
     header = ["type", "name", "pruned_on", "sparsity"] + SUBJECTS + list(LINGUISTIC_BENCHMARKS.keys())
     save_results(logs_file, results_rows, SUBJECTS, header=header)
     print(f"\nAll done! Results saved to '{logs_file}'.")
@@ -136,22 +140,11 @@ def cross_benchmark_evaluation(test_num, sparsity_ratios, run_env):
             )
             pruned_model, _ = load_pruned_model(load_path, device=DEVICE)
             print(f"\n=== Loaded pruned model from {load_path} ===")
-            subtask_accs = evaluate_pruned_model(pruned_model, tokenizer, run_env['benchmark_data_dir'], subject, lang,
-                                                 test_num)
-            print(
-                f"Evaluation results on subject '{subject}' and language '{lang}': "
-                + ", ".join([f"{acc:.4f}" for acc in subtask_accs])
-            )
+            subtask_acc = evaluate_model(pruned_model, tokenizer, run_env['benchmark_data_dir'], subject, lang,
+                                         test_num)
+            print(f"Evaluation results on subject '{subject}' and language '{lang}': {subtask_acc:.4f}")
             # Write results to file
-            for acc in subtask_accs:
-                writer.writerow([
-                    MODEL,
-                    linguistic_pruned,
-                    lang,
-                    sparsity_ratios[0],
-                    subject,
-                    acc,
-                ])
+            writer.writerow([MODEL, linguistic_pruned, lang, sparsity_ratios[0], subject, subtask_acc])
     fout.close()
 
 
@@ -207,5 +200,6 @@ if __name__ == "__main__":
     setup_environment(args.seed, run_env['raw_model_dir'])
     apply_benchmark_dir(project_dir)
 
+    evaluate_raw_model(args.test_num, run_env)
     prune(args.train_num, args.test_num, args.sparsity_ratios, run_env)
     # cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)
