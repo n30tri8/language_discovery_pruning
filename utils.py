@@ -46,7 +46,6 @@ def setup_tokenizer(model_name):
 
 def load_raw_model(model_name):
     """Load model with appropriate settings."""
-    # todo remove this temporary logging level
     transformers_logging.set_verbosity_info()  # shows INFO-level logs for this call only
 
     model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=RAW_MODEL_DIR,

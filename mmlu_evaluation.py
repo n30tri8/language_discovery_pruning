@@ -1,12 +1,16 @@
 from tqdm import tqdm
-from utils import DEVICE
-from submodules.SparseLLM.datautils import _build_user_message, SYSTEM_PROMPT
+
+from submodules.SparseLLM.datautils import _build_user_message
+from submodules.SparseLLM.mmlu_prompt_templates import SYSTEM_PROMPT
 from submodules.SparseLLM.datautils import get_mmlu
+from utils import DEVICE
+
 
 def extract_answer(text: str) -> str:
     """
     Parse model output to find predicted A/B/C/D from patterns like [[A]] or the last letter we see.
     """
+    # todo, not suitable for languages that have different alphabet
     if "[A]" in text:
         return "A"
     elif "[B]" in text:
@@ -20,10 +24,12 @@ def extract_answer(text: str) -> str:
             return text[i]
     return " "  # default if nothing found
 
+
 def format_prompt_for_test(record, shuffle_choices=True):
     system_msg = SYSTEM_PROMPT.format(field=record.get("subject"))
     user_msg, letter_map = _build_user_message(record, shuffle=shuffle_choices)
     return system_msg, user_msg, letter_map
+
 
 def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, device="cuda"):
     """
@@ -35,7 +41,6 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, device
     model.eval()
     correct = 0
     for rec in tqdm(subject_records, desc=f"Evaluating on {subject}", unit="record"):
-        correct_answer = rec.get("answer")
         system_msg, user_msg, letter_map = format_prompt_for_test(rec, shuffle_choices=True)
         messages = [
             {"role": "system", "content": system_msg},
@@ -56,28 +61,14 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, device
         gen_text = tokenizer.decode(gen_part, skip_special_tokens=True)
         model_extracted_answer = extract_answer(gen_text)
         mapped_answer = letter_map.get(model_extracted_answer)
+        correct_answer = rec.get("answer")
         if mapped_answer == correct_answer:
             correct += 1
     return correct / len(subject_records)
 
-def evaluate_raw_model_on_mmlu(model, tokenizer, benchmark_data_dir, test_num, subjects, languages):
-    """Evaluate the raw model on all subtasks."""
-    subtask_accs = []
-    for subject in subjects:
-        for lang in languages:
-            _, test_recs = get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=0, test_num=test_num)
-            acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, device=DEVICE)
-            subtask_accs.append(acc)
-            print(f"\n=== Evaluated subject={subject}, lang={lang}, accuracy={acc:.4f} ===")
-    return subtask_accs
 
-# todo refactor, similar to another function above
-def evaluate_pruned_model(model, tokenizer, benchmark_data_dir, subject, lang, test_num):
-    """Evaluate a pruned model on all subtasks."""
-    subtask_accs = []
+def evaluate_model(model, tokenizer, benchmark_data_dir, subject, lang, test_num):
+    """Evaluate a pruned model on a subject*lang ."""
     _, test_recs = get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=0, test_num=test_num)
-    acc = evaluate_model_on_dataset(
-        model, tokenizer, test_recs, subject, device=DEVICE
-    )
-    subtask_accs.append(acc)
-    return subtask_accs
+    acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, device=DEVICE)
+    return acc
