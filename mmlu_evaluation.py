@@ -1,8 +1,8 @@
 from tqdm import tqdm
 
 from submodules.SparseLLM.datautils import _build_user_message
-from submodules.SparseLLM.mmlu_prompt_templates import SYSTEM_PROMPT
 from submodules.SparseLLM.datautils import get_mmlu
+from submodules.SparseLLM.mmlu_prompt_templates import MMMLU_PROMPT
 from utils import DEVICE
 
 
@@ -25,13 +25,14 @@ def extract_answer(text: str) -> str:
     return " "  # default if nothing found
 
 
-def format_prompt_for_test(record, shuffle_choices=True):
-    system_msg = SYSTEM_PROMPT.format(field=record.get("subject"))
-    user_msg, letter_map = _build_user_message(record, shuffle=shuffle_choices)
+def format_prompt_for_test(record, lang, shuffle_choices=True):
+    replacement = {"field": record.get("subject")}
+    system_msg = MMMLU_PROMPT[lang]['system_template'](replacement)
+    user_msg, letter_map = _build_user_message(record, lang, shuffle=shuffle_choices)
     return system_msg, user_msg, letter_map
 
 
-def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, device="cuda"):
+def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, device="cuda"):
     """
     Evaluate a *finetuned or pruned* model on a list of leftover test records.
     """
@@ -41,7 +42,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, device
     model.eval()
     correct = 0
     for rec in tqdm(subject_records, desc=f"Evaluating on {subject}", unit="record"):
-        system_msg, user_msg, letter_map = format_prompt_for_test(rec, shuffle_choices=True)
+        system_msg, user_msg, letter_map = format_prompt_for_test(rec, lang, shuffle_choices=True)
         messages = [
             {"role": "system", "content": system_msg},
             {"role": "user", "content": user_msg},
@@ -70,5 +71,5 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, device
 def evaluate_model(model, tokenizer, benchmark_data_dir, subject, lang, test_num):
     """Evaluate a pruned model on a subject*lang ."""
     _, test_recs = get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=0, test_num=test_num)
-    acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, device=DEVICE)
+    acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, lang, device=DEVICE)
     return acc

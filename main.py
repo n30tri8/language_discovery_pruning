@@ -54,11 +54,7 @@ def evaluate_raw_model(test_num, run_env):
     print(f"\nRaw model evaluation done. Results saved to '{logs_file}'.")
 
 
-def prune(train_num, test_num, sparsity_ratios, run_env):
-    results_rows = []
-
-    logs_file = os.path.join(run_env['results_dir'], "pruning_logs.csv")
-
+def prune(sparsity_ratios, run_env):
     save_threads = []
 
     for benchmark in LINGUISTIC_BENCHMARKS:
@@ -102,14 +98,6 @@ def prune(train_num, test_num, sparsity_ratios, run_env):
             base_model.cpu()
             del base_model
             torch.cuda.empty_cache()
-
-    # Update save_results call with new header
-    # todo update header
-    header = ["type", "name", "pruned_on", "sparsity"] + SUBJECTS + list(LINGUISTIC_BENCHMARKS.keys())
-    save_results(logs_file, results_rows, SUBJECTS, header=header)
-    print(f"\nAll done! Results saved to '{logs_file}'.")
-    print("Rows:", len(results_rows))
-    print("Columns:", len(header))
 
     for thread in save_threads:
         thread.join()
@@ -201,5 +189,5 @@ if __name__ == "__main__":
     apply_benchmark_dir(project_dir)
 
     evaluate_raw_model(args.test_num, run_env)
-    prune(args.train_num, args.test_num, args.sparsity_ratios, run_env)
+    # prune(args.sparsity_ratios, run_env)
     # cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)
