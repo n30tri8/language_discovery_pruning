@@ -1,3 +1,90 @@
+# help to run
+docker build
+docker tag us-west1-docker.pkg.dev/sonorous-treat-476419-s8/main-docker/pruning:latest
+docker push us-west1-docker.pkg.dev/sonorous-treat-476419-s8/main-docker/pruning:latest
+
+gcloud ai custom-jobs create `
+  --region=us-west1 `
+  --display-name="de_raw_prune_eval_try_1" `
+  --config=vertex_job_config.yaml
+
+#### checklist of running
+- model
+- dataset samples in templates
+- LINGUISTIC_BENCHMARKS, comment\uncomment
+- machinespec in vertex ai
+- job name
+
+
+
+# TODO
+- [x] evaluate_model_on_dataset is buggy
+- [x] evaluate raw model on all subjects and report restlus
+### for real test
+- [x] update subjects
+- [x] update benchmarks for real test, update train counts and test counts, both glue and mmlu
+- [x] update model and run
+- [x] uncomment both procedures in main.py
+### load model problem
+- [x] download in local and upload to gcs
+- [x] should I return low_cpu_mem_usage=True
+- [x] try different machine: n1-standard-4 with two gpu or n1-standard-8 with one gpu
+### next optimization
+- [x] profile the next run
+- [] use persistent disk for saving pruned models: https://cloud.google.com/compute/docs/disks#disk-types
+- [x] test: save model on anoterh thread
+- [x] recheck models, I think I copies the wrong folder of meta-llama
+- [x] rebuild docker image after fixing the above issues
+- [] download from windows made twice the size of saved model
+
+
+### German GLUE
+- [x] update SELECTED_XGLUE_TASKS sample counts, change model
+- [x] test in prod
+- [x] omit cross-lingual from SELECTED_XGLUE_TASKS prompts
+- [x] xglue prompts in german
+- [x] mmmlue in german
+  - [x] check\enforce same question across all languages
+    phil(en, de), professional_law(en, de; first 550), high_school_mathematics(en, de), professional_psychology(en, de)
+  - [x] promting in german
+- add another section of glue, or mmlu??
+- rerun en pruning on the same xglue?
+
+
+### more robust run
+- selection of :
+  - sample_size
+  - sparse ratio
+  - machine for running: https://cloud.google.com/vertex-ai/docs/training/configure-compute?_gl=1*5c5yis*_ga*MTc1NTkxODIzNC4xNzQ1MzQyMzU2*_ga_WH2QY8WWF5*czE3NjIxMTMzNDQkbzQwJGcxJHQxNzYyMTE0MTQ5JGo0JGwwJGgw#specifying_gpus
+    -     machineType: n1-standard-4
+    acceleratorType: NVIDIA_TESLA_T4
+    acceleratorCount: 2
+    - n1-standard-16 ; mem 60
+    - g2-standard-12; mem 48
+    -> e2-highmem-8 ; mem 64
+    - n2-highmem-8; ; mem 64
+    - n1-highmem-8; mem 52
+    - for mem, ~45 is enough
+  - section of mmlu
+  - sections of xglue
+
+
+### useful features
+- [x] separation of different parts in prune()
+- selection of which parts to run, instead of commenting different parts
+- add this or fork
+This project is a fork of <original repo>.
+Currently maintained by @yourname.
+- [] add these to cmd: model to run, languages to run
+
+
+dowload model through:
+hf download meta-llama/Llama-3.1-8B-Instruct --local-dir .\raw_model\
+
+
+
+
+
 # Language Sparsity & Cognition Project 🧠
 
 This repository contains the code and experiments for our paper ["Pruning for Mindreading: Analyzing Theory of Mind Capabilities in Sparse Language Models"](pruning_for_mindreading.pdf).
@@ -69,4 +156,4 @@ This project builds upon two key repositories:
 The code has been significantly adapted and streamlined for our specific experiments, removing unused components and simplifying the evaluation pipeline.
 
 ## License 📜
-This project is licensed under the MIT License - see the `LICENSE`file for details
+This project is licensed under the MIT License - see the `LICENSE`file for detail
