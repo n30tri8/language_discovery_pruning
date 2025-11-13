@@ -189,5 +189,5 @@ if __name__ == "__main__":
     apply_benchmark_dir(project_dir)
 
     evaluate_raw_model(args.test_num, run_env)
-    # prune(args.sparsity_ratios, run_env)
-    # cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)
+    prune(args.sparsity_ratios, run_env)
+    cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)
