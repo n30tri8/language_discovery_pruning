@@ -10,3 +10,4 @@ pruned_models
 .venv/
 results/*
 !results/.gitkeep
+__pycache__/
