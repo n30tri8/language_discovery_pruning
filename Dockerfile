@@ -19,4 +19,4 @@ COPY main.py mmlu_evaluation.py pruning.py utils.py ./
 
 # Command to run the application
 ENTRYPOINT ["python", "main.py"]
-CMD ["--test_num", "400", "--sparsity_ratios", "50"]
+CMD ["--model", "meta-llama/Llama-3.1-8B-Instruct", "--test_num", "400", "--sparsity_ratios", "50"]

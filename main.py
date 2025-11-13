@@ -26,23 +26,19 @@ LINGUISTIC_BENCHMARKS = {
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Add a simple module-level model variable to replace the argparse --models option
-# Candids: "meta-llama/Llama-3.1-8B-Instruct" \ "meta-llama/Llama-3.2-11B-Vision-Instruct" \ "meta-llama/Llama-3.2-3b-Instruct"
-MODEL = "meta-llama/Llama-3.1-8B-Instruct"
 
-
-def evaluate_raw_model(test_num, run_env):
+def evaluate_raw_model(model, test_num, run_env):
     results_rows = []
 
     logs_file = os.path.join(run_env['results_dir'], "raw_model_eval.csv")
-    print(f"\n=== Evaluating RAW model: {MODEL} ===")
-    tokenizer = setup_tokenizer(MODEL)
-    raw_model = load_raw_model(MODEL)
+    print(f"\n=== Evaluating RAW model: {model} ===")
+    tokenizer = setup_tokenizer(model)
+    raw_model = load_raw_model(model)
     languages = [LINGUISTIC_BENCHMARKS[b]['lang'] for b in LINGUISTIC_BENCHMARKS]
     for subject in SUBJECTS:
         for lang in languages:
             subtask_acc = evaluate_model(raw_model, tokenizer, run_env['benchmark_data_dir'], subject, lang, test_num)
-            results_rows.append([MODEL, subject, lang, f"{subtask_acc:.4f}"])
+            results_rows.append([model, subject, lang, f"{subtask_acc:.4f}"])
 
     # Cleanup raw model
     raw_model.cpu()
@@ -54,7 +50,7 @@ def evaluate_raw_model(test_num, run_env):
     print(f"\nRaw model evaluation done. Results saved to '{logs_file}'.")
 
 
-def prune(sparsity_ratios, run_env):
+def prune(model, sparsity_ratios, run_env):
     save_threads = []
 
     for benchmark in LINGUISTIC_BENCHMARKS:
@@ -62,8 +58,8 @@ def prune(sparsity_ratios, run_env):
             print(f"\n=== Pruning on linguistic benchmark '{benchmark}' ===")
 
             # Initialize new model and tokenizer
-            base_model = load_raw_model(MODEL)
-            tokenizer = setup_tokenizer(MODEL)
+            base_model = load_raw_model(model)
+            tokenizer = setup_tokenizer(model)
 
             # Prepare data
             benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
@@ -88,7 +84,7 @@ def prune(sparsity_ratios, run_env):
 
             # Save model
             save_path = model_dir(
-                run_env['model_dir'], MODEL, benchmark, LINGUISTIC_BENCHMARKS[benchmark]['lang'], ratio
+                run_env['model_dir'], model, benchmark, LINGUISTIC_BENCHMARKS[benchmark]['lang'], ratio
             )
             thread = save_pruned_model_async(base_model, save_path)
             save_threads.append(thread)
@@ -103,8 +99,8 @@ def prune(sparsity_ratios, run_env):
         thread.join()
 
 
-def cross_benchmark_evaluation(test_num, sparsity_ratios, run_env):
-    tokenizer = setup_tokenizer(MODEL)
+def cross_benchmark_evaluation(model, test_num, sparsity_ratios, run_env):
+    tokenizer = setup_tokenizer(model)
 
     logs_file = os.path.join(run_env['results_dir'], "cross_benchmark_logs.csv")
     write_header = not os.path.exists(logs_file)
@@ -123,7 +119,7 @@ def cross_benchmark_evaluation(test_num, sparsity_ratios, run_env):
     for linguistic_pruned in LINGUISTIC_BENCHMARKS:
         lang = LINGUISTIC_BENCHMARKS[linguistic_pruned]['lang']
         load_path = model_dir(
-            run_env['model_dir'], MODEL, linguistic_pruned, lang, sparsity_ratios[0]
+            run_env['model_dir'], model, linguistic_pruned, lang, sparsity_ratios[0]
         )
         pruned_model, _ = load_pruned_model(load_path, device=DEVICE)
         print(f"\n=== Loaded pruned model from {load_path} ===")
@@ -133,7 +129,7 @@ def cross_benchmark_evaluation(test_num, sparsity_ratios, run_env):
                                          test_num)
             print(f"Evaluation results on subject '{subject}' and language '{lang}': {subtask_acc:.4f}")
             # Write results to file
-            writer.writerow([MODEL, linguistic_pruned, lang, sparsity_ratios[0], subject, subtask_acc])
+            writer.writerow([model, linguistic_pruned, lang, sparsity_ratios[0], subject, subtask_acc])
     fout.close()
 
 
@@ -184,11 +180,18 @@ if __name__ == "__main__":
         help="List of integer percentages for unstructured pruning, e.g. 25 50 75.",
     )
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--model",
+        type=str,
+        required=True,
+        default="meta-llama/Llama-3.2-3b-Instruct",
+        help="Specify the model to use, e.g., 'meta-llama/Llama-3.1-8B-Instruct'."
+    )
     args = parser.parse_args()
 
     setup_environment(args.seed, run_env['raw_model_dir'])
     apply_benchmark_dir(project_dir)
 
-    evaluate_raw_model(args.test_num, run_env)
-    prune(args.sparsity_ratios, run_env)
-    cross_benchmark_evaluation(args.test_num, args.sparsity_ratios, run_env)
+    evaluate_raw_model(args.model, args.test_num, run_env)
+    prune(args.model, args.sparsity_ratios, run_env)
+    cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env)
