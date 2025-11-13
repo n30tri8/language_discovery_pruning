@@ -39,7 +39,10 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
     if len(subject_records) == 0:
         return 0.0
 
+    model = model.to(device)
+    tokenizer = tokenizer.to(device)
     model.eval()
+
     correct = 0
     for rec in tqdm(subject_records, desc=f"Evaluating on {subject}", unit="record"):
         system_msg, user_msg, letter_map = format_prompt_for_test(rec, lang, shuffle_choices=True)
@@ -49,7 +52,6 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
         ]
         chat_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         inputs = tokenizer(chat_text, return_tensors="pt").to(device)
-        model = model.to(device)
         out = model.generate(
             **inputs,
             max_new_tokens=12,
