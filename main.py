@@ -122,12 +122,13 @@ def cross_benchmark_evaluation(test_num, sparsity_ratios, run_env):
 
     for linguistic_pruned in LINGUISTIC_BENCHMARKS:
         lang = LINGUISTIC_BENCHMARKS[linguistic_pruned]['lang']
+        load_path = model_dir(
+            run_env['model_dir'], MODEL, linguistic_pruned, lang, sparsity_ratios[0]
+        )
+        pruned_model, _ = load_pruned_model(load_path, device=DEVICE)
+        print(f"\n=== Loaded pruned model from {load_path} ===")
+
         for subject in SUBJECTS:
-            load_path = model_dir(
-                run_env['model_dir'], MODEL, linguistic_pruned, lang, sparsity_ratios[0]
-            )
-            pruned_model, _ = load_pruned_model(load_path, device=DEVICE)
-            print(f"\n=== Loaded pruned model from {load_path} ===")
             subtask_acc = evaluate_model(pruned_model, tokenizer, run_env['benchmark_data_dir'], subject, lang,
                                          test_num)
             print(f"Evaluation results on subject '{subject}' and language '{lang}': {subtask_acc:.4f}")
