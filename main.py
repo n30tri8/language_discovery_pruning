@@ -27,18 +27,18 @@ LINGUISTIC_BENCHMARKS = {
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def evaluate_raw_model(model, test_num, run_env):
+def evaluate_raw_model(model_name, test_num, run_env):
     results_rows = []
 
     logs_file = os.path.join(run_env['results_dir'], "raw_model_eval.csv")
-    print(f"\n=== Evaluating RAW model: {model} ===")
-    tokenizer = setup_tokenizer(model)
-    raw_model = load_raw_model(model)
+    print(f"\n=== Evaluating RAW model: {model_name} ===")
+    tokenizer = setup_tokenizer(model_name)
+    raw_model = load_raw_model(model_name)
     languages = [LINGUISTIC_BENCHMARKS[b]['lang'] for b in LINGUISTIC_BENCHMARKS]
     for subject in SUBJECTS:
         for lang in languages:
             subtask_acc = evaluate_model(raw_model, tokenizer, run_env['benchmark_data_dir'], subject, lang, test_num)
-            results_rows.append([model, subject, lang, f"{subtask_acc:.4f}"])
+            results_rows.append([model_name, subject, lang, f"{subtask_acc:.4f}"])
 
     # Cleanup raw model
     raw_model.cpu()
@@ -50,7 +50,7 @@ def evaluate_raw_model(model, test_num, run_env):
     print(f"\nRaw model evaluation done. Results saved to '{logs_file}'.")
 
 
-def prune(model, sparsity_ratios, run_env):
+def prune(model_name, sparsity_ratios, run_env):
     save_threads = []
 
     for benchmark in LINGUISTIC_BENCHMARKS:
@@ -58,8 +58,8 @@ def prune(model, sparsity_ratios, run_env):
             print(f"\n=== Pruning on linguistic benchmark '{benchmark}' ===")
 
             # Initialize new model and tokenizer
-            base_model = load_raw_model(model)
-            tokenizer = setup_tokenizer(model)
+            base_model = load_raw_model(model_name)
+            tokenizer = setup_tokenizer(model_name)
 
             # Prepare data
             benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
@@ -84,7 +84,7 @@ def prune(model, sparsity_ratios, run_env):
 
             # Save model
             save_path = model_dir(
-                run_env['model_dir'], model, benchmark, LINGUISTIC_BENCHMARKS[benchmark]['lang'], ratio
+                run_env['model_dir'], model_name, benchmark, LINGUISTIC_BENCHMARKS[benchmark]['lang'], ratio
             )
             thread = save_pruned_model_async(base_model, save_path)
             save_threads.append(thread)
@@ -99,8 +99,8 @@ def prune(model, sparsity_ratios, run_env):
         thread.join()
 
 
-def cross_benchmark_evaluation(model, test_num, sparsity_ratios, run_env):
-    tokenizer = setup_tokenizer(model)
+def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env):
+    tokenizer = setup_tokenizer(model_name)
 
     logs_file = os.path.join(run_env['results_dir'], "cross_benchmark_logs.csv")
     write_header = not os.path.exists(logs_file)
@@ -119,7 +119,7 @@ def cross_benchmark_evaluation(model, test_num, sparsity_ratios, run_env):
     for linguistic_pruned in LINGUISTIC_BENCHMARKS:
         lang = LINGUISTIC_BENCHMARKS[linguistic_pruned]['lang']
         load_path = model_dir(
-            run_env['model_dir'], model, linguistic_pruned, lang, sparsity_ratios[0]
+            run_env['model_dir'], model_name, linguistic_pruned, lang, sparsity_ratios[0]
         )
         pruned_model, _ = load_pruned_model(load_path, device=DEVICE)
         print(f"\n=== Loaded pruned model from {load_path} ===")
@@ -129,7 +129,7 @@ def cross_benchmark_evaluation(model, test_num, sparsity_ratios, run_env):
                                          test_num)
             print(f"Evaluation results on subject '{subject}' and language '{lang}': {subtask_acc:.4f}")
             # Write results to file
-            writer.writerow([model, linguistic_pruned, lang, sparsity_ratios[0], subject, subtask_acc])
+            writer.writerow([model_name, linguistic_pruned, lang, sparsity_ratios[0], subject, subtask_acc])
     fout.close()
 
 
@@ -164,9 +164,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--train_num", type=int, default=32, help="Calibration set size per subtask."
-    )
-    parser.add_argument(
         "--test_num",
         type=int,
         default=20,
@@ -184,7 +181,6 @@ if __name__ == "__main__":
         "--model",
         type=str,
         required=True,
-        default="meta-llama/Llama-3.2-3b-Instruct",
         help="Specify the model to use, e.g., 'meta-llama/Llama-3.1-8B-Instruct'."
     )
     args = parser.parse_args()
