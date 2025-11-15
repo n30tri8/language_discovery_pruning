@@ -166,7 +166,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--test_num",
         type=int,
-        default=20,
+        default=50,
         help="Test set size per subtask, if negative use all.",
     )
     parser.add_argument(

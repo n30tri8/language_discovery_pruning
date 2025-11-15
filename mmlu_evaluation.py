@@ -31,16 +31,14 @@ def format_system_prompt(subject, lang):
     system_msg = MMMLU_PROMPT[lang]['system_template'](replacement)
     return system_msg
 
+
 def format_user_prompt(record, lang, shuffle_choices=True):
     user_msg, letter_map = _build_user_message(record, lang, shuffle=shuffle_choices)
     return user_msg, letter_map
 
 
-import time
-
-
 @torch.inference_mode()
-def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, device="cuda", batch_size=10):
+def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, batch_size, device="cuda"):
     """
     Evaluate a *finetuned or pruned* model on a list of leftover test records.
     """
@@ -77,7 +75,6 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
                       messages]
         inputs = tokenizer(chat_texts, return_tensors="pt", padding=True, truncation=True).to(device)
 
-        t0 = time.time()
         # Generate outputs
         outputs = model.generate(
             **inputs,
@@ -85,11 +82,6 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
             do_sample=False,
             pad_token_id=tokenizer.pad_token_id,
             top_p=None,
-        )
-        t_gen = time.time()
-
-        print(
-            f"generate={t_gen - t0:.4f}s"
         )
 
         # Decode and evaluate
@@ -108,5 +100,5 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
 def evaluate_model(model, tokenizer, benchmark_data_dir, subject, lang, test_num):
     """Evaluate a pruned model on a subject*lang ."""
     _, test_recs = get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=0, test_num=test_num)
-    acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, lang, device=DEVICE)
+    acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, lang, batch_size=20, device=DEVICE)
     return acc
