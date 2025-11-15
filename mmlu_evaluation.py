@@ -1,3 +1,4 @@
+import torch
 from tqdm import tqdm
 
 from submodules.SparseLLM.datautils import _build_user_message
@@ -25,14 +26,21 @@ def extract_answer(text: str) -> str:
     return " "  # default if nothing found
 
 
-def format_prompt_for_test(record, lang, shuffle_choices=True):
-    replacement = {"field": record.get("subject")}
+def format_system_prompt(subject, lang):
+    replacement = {"field": subject}
     system_msg = MMMLU_PROMPT[lang]['system_template'](replacement)
+    return system_msg
+
+def format_user_prompt(record, lang, shuffle_choices=True):
     user_msg, letter_map = _build_user_message(record, lang, shuffle=shuffle_choices)
-    return system_msg, user_msg, letter_map
+    return user_msg, letter_map
 
 
-def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, device="cuda"):
+import time
+
+
+@torch.inference_mode()
+def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, device="cuda", batch_size=10):
     """
     Evaluate a *finetuned or pruned* model on a list of leftover test records.
     """
@@ -40,33 +48,60 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
         return 0.0
 
     model = model.to(device)
-    tokenizer = tokenizer.to(device)
-    model.eval()
-
     correct = 0
-    for rec in tqdm(subject_records, desc=f"Evaluating on {subject}", unit="record"):
-        system_msg, user_msg, letter_map = format_prompt_for_test(rec, lang, shuffle_choices=True)
+
+    batches = [
+        subject_records[i:i + batch_size]
+        for i in range(0, len(subject_records), batch_size)
+    ]
+
+    # Pre-cache the system prompt as they are the same for all records
+    system_msg = format_system_prompt(subject, lang)
+
+    for batch in tqdm(batches, desc=f"Evaluating on {subject}", unit="batch"):
+        user_msgs, letter_maps, correct_answers = [], [], []
+
+        # Preprocess batch
+        for rec in batch:
+            user_msg, letter_map = format_user_prompt(rec, lang, shuffle_choices=True)
+            user_msgs.append(user_msg)
+            letter_maps.append(letter_map)
+            correct_answers.append(rec.get("answer"))
+
+        # Tokenize batch
         messages = [
-            {"role": "system", "content": system_msg},
-            {"role": "user", "content": user_msg},
+            [{"role": "system", "content": system_msg}, {"role": "user", "content": usr_msg}]
+            for usr_msg in user_msgs
         ]
-        chat_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        inputs = tokenizer(chat_text, return_tensors="pt").to(device)
-        out = model.generate(
+        chat_texts = [tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True) for msg in
+                      messages]
+        inputs = tokenizer(chat_texts, return_tensors="pt", padding=True, truncation=True).to(device)
+
+        t0 = time.time()
+        # Generate outputs
+        outputs = model.generate(
             **inputs,
             max_new_tokens=12,
             do_sample=False,
-            temperature=1.0,
             pad_token_id=tokenizer.pad_token_id,
             top_p=None,
         )
-        gen_part = out[0][inputs["input_ids"].shape[1]:]
-        gen_text = tokenizer.decode(gen_part, skip_special_tokens=True)
-        model_extracted_answer = extract_answer(gen_text)
-        mapped_answer = letter_map.get(model_extracted_answer)
-        correct_answer = rec.get("answer")
-        if mapped_answer == correct_answer:
-            correct += 1
+        t_gen = time.time()
+
+        print(
+            f"generate={t_gen - t0:.4f}s"
+        )
+
+        # Decode and evaluate
+        input_length = inputs["input_ids"].shape[1]
+        for i, out in enumerate(outputs):
+            gen_part = out[input_length:]
+            gen_text = tokenizer.decode(gen_part, skip_special_tokens=True)
+            model_extracted_answer = extract_answer(gen_text)
+            mapped_answer = letter_maps[i].get(model_extracted_answer)
+            if mapped_answer == correct_answers[i]:
+                correct += 1
+
     return correct / len(subject_records)
 
 
