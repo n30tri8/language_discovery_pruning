@@ -43,6 +43,11 @@ Note:
 
 system_prompt_de = """Sie sind ein Experte in {field}. Unten finden Sie eine Multiple-Choice-Frage in diesem Bereich und die dazugehörigen Antwortmöglichkeiten.\nHinweis:\n(1) Bitte geben Sie nur den wahrscheinlichsten Antwortindex im Format: [[Antwortindex]] aus. Wenn die wahrscheinlichste Antwortoption beispielsweise 'A. Handtasche' ist, geben Sie '[[A]]' aus;\n(2) Sie müssen eine der angegebenen Antwortoptionen 'A, B, C, D' als die wahrscheinlichste auswählen."""
 
+system_prompt_fr = """Vous êtes un expert en {field}. Ci-dessous se trouve une question à choix multiples dans ce domaine et ses options de réponse.
+Remarque :
+(1) Veuillez uniquement fournir l'indice de réponse le plus probable au format : [[Indice de Réponse]], par exemple, si l'option de réponse la plus probable est 'A. Sac à main', alors répondez '[[A]]' ;
+(2) Vous devez choisir l'une des options de réponse données 'A, B, C, D' comme étant la plus probable."""
+
 system_prompt_field_translation = {
     'de': {
         "field": {
@@ -50,6 +55,14 @@ system_prompt_field_translation = {
             "professional_law": "Rechtswissenschaften",
             "high_school_mathematics": "Gymnasialmathematik",
             "professional_psychology": "Berufspsychologie",
+        }
+    },
+    'fr': {
+        "field": {
+            "philosophy": "Philosophie",
+            "professional_law": "Droit professionnel",
+            "high_school_mathematics": "Mathématiques de lycée",
+            "professional_psychology": "Psychologie professionnelle",
         }
     }
 }
@@ -70,6 +83,14 @@ user_prompt_de = (
     "C. {options[2]}\n"
     "D. {options[3]}"
 )
+user_prompt_fr = (
+    "[Question]\n{question}\n\n"
+    "[Réponses possibles]\n"
+    "A. {options[0]}\n"
+    "B. {options[1]}\n"
+    "C. {options[2]}\n"
+    "D. {options[3]}"
+)
 
 MMMLU_PROMPT = {
     "en": {
@@ -80,5 +101,10 @@ MMMLU_PROMPT = {
         "system_template": make_prompt_template(system_prompt_de,
                                                 translation_mapping=system_prompt_field_translation["de"]),
         "user_template": make_prompt_template(user_prompt_de)
+    },
+    "fr": {
+        "system_template": make_prompt_template(system_prompt_fr,
+                                                translation_mapping=system_prompt_field_translation["fr"]),
+        "user_template": make_prompt_template(user_prompt_fr)
     },
 }

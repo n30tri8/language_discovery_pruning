@@ -18,8 +18,12 @@ LINGUISTIC_BENCHMARKS = {
     #     "lang": "en",
     #     "loader": get_glue
     # },
-    "XGLUE_DE": {
-        "lang": "de",
+    # "XGLUE_DE": {
+    #     "lang": "de",
+    #     "loader": get_xglue
+    # },
+    "XGLUE_FR": {
+        "lang": "fr",
         "loader": get_xglue
     }
 }

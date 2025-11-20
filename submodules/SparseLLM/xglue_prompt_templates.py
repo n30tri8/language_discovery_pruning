@@ -56,6 +56,18 @@ Hypothese: {hypothesis}
 Was ist die Beziehung?
 """
 
+xnli_system_prompt_fr = """
+Vous êtes un système d'inférence en langage naturel.
+Étant donné une prémisse et une hypothèse, déterminez si l'hypothèse est impliquée,
+contradictoire ou neutre. Répondez par l'un des suivants : entailment, contradiction, neutral.
+"""
+
+xnli_user_prompt_fr = """
+Prémisse : {premise}
+Hypothèse : {hypothesis}
+Quelle est la relation ?
+"""
+
 # ===== PAWS-X =====
 pawsx_system_prompt_en = """
 You are a paraphrase identification system.
@@ -83,7 +95,17 @@ Satz 2: {sentence2}
 Haben diese Sätze dieselbe Bedeutung?
 """
 
-# Update SELECTED_XGLUE_TASKS to include German (DE) for XNLI and PAWS-X
+pawsx_system_prompt_fr = """
+Vous êtes un système d'identification de paraphrases.
+Retournez 1 si les deux phrases ont le même sens, sinon 0.
+"""
+
+pawsx_user_prompt_fr = """
+Phrase 1 : {sentence1}
+Phrase 2 : {sentence2}
+Ces phrases ont-elles le même sens ?
+"""
+
 SELECTED_XGLUE_TASKS = {
     "xnli": {
         "sample_size": 500,
@@ -97,6 +119,11 @@ SELECTED_XGLUE_TASKS = {
             "user_template": make_prompt_template(xnli_user_prompt_de),
             "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
         },
+        "fr": {
+            "system_template": make_prompt_template(xnli_system_prompt_fr),
+            "user_template": make_prompt_template(xnli_user_prompt_fr),
+            "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
+        },
     },
     "pawsx": {
         "sample_size": 500,
@@ -108,6 +135,11 @@ SELECTED_XGLUE_TASKS = {
         "de": {
             "system_template": make_prompt_template(pawsx_system_prompt_de),
             "user_template": make_prompt_template(pawsx_user_prompt_de),
+            "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
+        },
+        "fr": {
+            "system_template": make_prompt_template(pawsx_system_prompt_fr),
+            "user_template": make_prompt_template(pawsx_user_prompt_fr),
             "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
         }
     }
