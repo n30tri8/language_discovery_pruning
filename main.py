@@ -57,28 +57,27 @@ def evaluate_raw_model(model_name, test_num, run_env):
 def prune(model_name, sparsity_ratios, run_env):
     save_threads = []
 
+    tokenizer = setup_tokenizer(model_name)
+
     for benchmark in LINGUISTIC_BENCHMARKS:
+        print(f"\n=== Pruning on linguistic benchmark '{benchmark}' ===")
+        # Prepare data
+        benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
+        benchmark_data, max_cal_len = benchmark_loader(tokenizer)
+
         for ratio in sparsity_ratios:
-            print(f"\n=== Pruning on linguistic benchmark '{benchmark}' ===")
+            model_to_prune = load_raw_model(model_name)
+            model_to_prune.seqlen = max_cal_len
 
-            # Initialize new model and tokenizer
-            base_model = load_raw_model(model_name)
-            tokenizer = setup_tokenizer(model_name)
-
-            # Prepare data
-            benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
-            benchmark_data, max_cal_len = benchmark_loader(tokenizer)
-
-            base_model.seqlen = max_cal_len
 
             # Prune and evaluate
             llama_sparsellm(
-                base_model, benchmark_data, torch.device(DEVICE), ratio / 100.0
+                model_to_prune, benchmark_data, torch.device(DEVICE), ratio / 100.0
             )
 
             # TODO evaluation differs, do it later
             # Evaluate pruned model on GLUE benchmark
-            # benchmark_results = evaluate_model_on_dataset(base_model, tokenizer, benchmark_data, benchmark)
+            # benchmark_results = evaluate_model_on_dataset(model_to_prune, tokenizer, benchmark_data, benchmark)
 
             # Save results with new format
             # results_rows.append(
@@ -90,13 +89,14 @@ def prune(model_name, sparsity_ratios, run_env):
             save_path = model_dir(
                 run_env['model_dir'], model_name, benchmark, LINGUISTIC_BENCHMARKS[benchmark]['lang'], ratio
             )
-            thread = save_pruned_model_async(base_model, save_path)
+            # Move model to CPU for saving to avoid GPU memory spike during serialization
+            model_to_prune.cpu()
+            thread = save_pruned_model_async(model_to_prune, save_path)
             save_threads.append(thread)
             print(f"Saving pruned model to {save_path} in a thread: {thread}")
 
             # Cleanup
-            base_model.cpu()
-            del base_model
+            del model_to_prune
             torch.cuda.empty_cache()
 
     for thread in save_threads:
