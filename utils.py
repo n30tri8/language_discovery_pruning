@@ -87,14 +87,16 @@ def save_pruned_model(model, save_path):
 def save_pruned_model_async(model, save_path):
     """Save the pruned model asynchronously to avoid blocking the main thread."""
 
-    def _save():
+    def _save(m):
         os.makedirs(save_path, exist_ok=True)
         print(f"[INFO] Saving pruned model to {save_path}...")
-        model.save_pretrained(save_path)
+        m.save_pretrained(save_path)
         print(f"[INFO] ✅ Model saved: {save_path}")
+        # Cleanup
+        del m
 
     # Launch background thread
-    thread = threading.Thread(target=_save, daemon=False)
+    thread = threading.Thread(target=_save, args=(model,), daemon=False)
     thread.start()
 
     return thread  # Return thread if caller wants to join()

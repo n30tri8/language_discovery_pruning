@@ -91,13 +91,10 @@ def prune(model_name, sparsity_ratios, run_env):
             )
             # Move model to CPU for saving to avoid GPU memory spike during serialization
             model_to_prune.cpu()
+            torch.cuda.empty_cache()
             thread = save_pruned_model_async(model_to_prune, save_path)
             save_threads.append(thread)
             print(f"Saving pruned model to {save_path} in a thread: {thread}")
-
-            # Cleanup
-            del model_to_prune
-            torch.cuda.empty_cache()
 
     for thread in save_threads:
         thread.join()
