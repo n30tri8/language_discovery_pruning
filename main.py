@@ -6,7 +6,7 @@ from functools import partial
 import torch
 
 from mmlu_evaluation import evaluate_model
-from submodules.SparseLLM.datautils import get_xglue
+from submodules.SparseLLM.datautils import get_xglue, get_glue
 from submodules.SparseLLM.model_utils import llama_sparsellm
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model_async, \
     load_pruned_model, model_dir
@@ -14,14 +14,14 @@ from utils import setup_environment, setup_tokenizer, load_raw_model, save_resul
 SUBJECTS = ["philosophy", "professional_law", "high_school_mathematics", "professional_psychology"]
 
 LINGUISTIC_BENCHMARKS = {
-    # "EN GLUE": {
-    #     "lang": "en",
-    #     "loader": get_glue
-    # },
-    # "XGLUE_DE": {
-    #     "lang": "de",
-    #     "loader": get_xglue
-    # },
+    "EN GLUE": {
+        "lang": "en",
+        "loader": get_glue
+    },
+    "XGLUE_DE": {
+        "lang": "de",
+        "loader": get_xglue
+    },
     "XGLUE_FR": {
         "lang": "fr",
         "loader": get_xglue
@@ -184,11 +184,22 @@ if __name__ == "__main__":
         required=True,
         help="Specify the model to use, e.g., 'meta-llama/Llama-3.1-8B-Instruct'."
     )
+    parser.add_argument(
+        "--run",
+        nargs="+",
+        choices=["raw_eval", "prune", "cross_eval"],
+        default=["raw_eval"],
+        help="Which procedures to run. Choose any of: raw_eval prune cross_eval. Default: raw_eval.",
+    )
     args = parser.parse_args()
+    to_run = set(args.run)
 
     setup_environment(args.seed, run_env['raw_model_dir'])
     apply_benchmark_dir(project_dir)
 
-    evaluate_raw_model(args.model, args.test_num, run_env)
-    prune(args.model, args.sparsity_ratios, run_env)
-    cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env)
+    if "raw_eval" in to_run:
+        evaluate_raw_model(args.model, args.test_num, run_env)
+    if "prune" in to_run:
+        prune(args.model, args.sparsity_ratios, run_env)
+    if "cross_eval" in to_run:
+        cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env)
