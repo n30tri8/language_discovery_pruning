@@ -21,3 +21,8 @@ plots/
 results/
 pruned_models/
 .venv/
+
+# Ignore all contents of `raw_model` except one model folder
+raw_model/*
+!raw_model/models--Qwen--Qwen2.5-7B-Instruct
+!raw_model/models--Qwen--Qwen2.5-7B-Instruct/**

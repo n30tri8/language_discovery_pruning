@@ -11,7 +11,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Application
-FROM lang_discovery/raw_model/llama3.1_8b AS app
+FROM lang_discovery/raw_model/qwen2.5_7b AS app
 # Copy the project files into the container
 COPY benchmark_data ./benchmark_data
 COPY submodules ./submodules
@@ -19,4 +19,4 @@ COPY main.py mmlu_evaluation.py pruning.py utils.py ./
 
 # Command to run the application
 ENTRYPOINT ["python", "main.py"]
-CMD ["--model", "meta-llama/Llama-3.1-8B-Instruct", "--test_num", "400", "--sparsity_ratios", "50"]
+CMD ["--model", "Qwen/Qwen2.5-7B-Instruct", "--test_num", "400", "--sparsity_ratios", "50", "--run", "raw_eval cross_eval"]
