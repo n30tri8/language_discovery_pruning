@@ -36,6 +36,16 @@ def llama_sparsellm(model, dataloader, dev, sparsity) -> None:
         def __init__(self, module):
             super().__init__()
             self.module = module
+            # Optionally copy known attributes Qwen2 expects
+            for attr in ("attention_type", "config"):
+                if hasattr(module, attr):
+                    setattr(self, attr, getattr(module, attr))
+
+        def __getattr__(self, name):
+            # Delegate missing attributes to the wrapped module
+            if name != "module" and hasattr(self.__dict__.get("module", None), name):
+                return getattr(self.__dict__["module"], name)
+            return super().__getattr__(name)
 
         def forward(self, hidden_states, **kwargs):
             idx = cache["i"]
