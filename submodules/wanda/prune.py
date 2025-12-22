@@ -95,14 +95,11 @@ def prune_wanda(model, calib_data, args, device=torch.device("cuda:0")):
 
             # unstructured pruning
             W_mask = torch.zeros_like(W_metric, dtype=torch.bool)
-            # pick the fraction of smallest entries in W_metric
-            k = int(W_metric.numel() * args.sparsity_ratio)
-            if k < 1:
-                continue
-            # flatten & topk
-            # We want the smallest k. topk(..., largest=False).
-            threshold = torch.topk(W_metric.flatten(), k, largest=False)[0][-1]
-            W_mask = W_metric <= threshold
+            # pick the fraction of smallest entries per-output
+            k = int(W_metric.shape[1] * args.sparsity_ratio)
+            sort_res = torch.sort(W_metric, dim=-1, stable=True)
+            indices = sort_res[1][:, :k]
+            W_mask.scatter_(1, indices, True)
             subset[name].weight.data[W_mask] = 0  ## set weights to zero
 
         # forward pass again so next layer sees the pruned representation
