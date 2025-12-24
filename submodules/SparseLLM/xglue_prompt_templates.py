@@ -109,6 +109,7 @@ Ces phrases ont-elles le même sens ?
 SELECTED_XGLUE_TASKS = {
     "xnli": {
         "sample_size": 500,
+        "test_size": 50,
         "en": {
             "system_template": make_prompt_template(xnli_system_prompt_en),
             "user_template": make_prompt_template(xnli_user_prompt_en),
@@ -127,6 +128,7 @@ SELECTED_XGLUE_TASKS = {
     },
     "pawsx": {
         "sample_size": 500,
+        "test_size": 50,
         "en": {
             "system_template": make_prompt_template(pawsx_system_prompt_en),
             "user_template": make_prompt_template(pawsx_user_prompt_en),

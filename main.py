@@ -5,7 +5,9 @@ from functools import partial
 
 import torch
 
-from mmlu_evaluation import evaluate_model
+from evaluation.common_evaluation import evaluate_on_linguistic
+from evaluation.glue_spec import GlueEvalSpec
+from evaluation.mmlu_evaluation import evaluate_model
 from submodules.SparseLLM.datautils import get_xglue, get_glue
 from submodules.SparseLLM.model_utils import llama_sparsellm
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model_async, \
@@ -16,15 +18,18 @@ SUBJECTS = ["philosophy", "professional_law", "high_school_mathematics", "profes
 LINGUISTIC_BENCHMARKS = {
     "EN GLUE": {
         "lang": "en",
-        "loader": get_glue
+        "loader": get_glue,
+        "eval_spec": GlueEvalSpec()
     },
     "XGLUE_DE": {
         "lang": "de",
-        "loader": get_xglue
+        "loader": get_xglue,
+        # "eval_spec": ?()
     },
     "XGLUE_FR": {
         "lang": "fr",
-        "loader": get_xglue
+        "loader": get_xglue,
+        # "eval_spec": ?()
     }
 }
 
@@ -72,9 +77,34 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages):
     tokenizer = setup_tokenizer(model_name)
     allowed_langs = set(selected_languages)
 
+    # Prepare linguistic evaluation logs file
+    linguistic_logs_file = os.path.join(run_env['results_dir'], "linguistic_eval_logs.csv")
+    write_header = not os.path.exists(linguistic_logs_file)
+    os.makedirs(os.path.dirname(linguistic_logs_file), exist_ok=True)
+    fout = open(linguistic_logs_file, "a", newline="", encoding="utf-8")
+    writer = csv.writer(fout)
+    if write_header:
+        writer.writerow(["model_name", "benchmark", "lang", "pruned_ratio", "evaluation_result"])
+
     for benchmark in LINGUISTIC_BENCHMARKS:
-        if LINGUISTIC_BENCHMARKS[benchmark]['lang'] not in allowed_langs:
+        lang = LINGUISTIC_BENCHMARKS[benchmark]['lang']
+        if lang not in allowed_langs:
             continue
+
+        # pre-prune evaluation
+        model_to_prune = load_raw_model(model_name)
+        evaluation_spec = LINGUISTIC_BENCHMARKS[benchmark]['eval_spec']
+        linguistic_eval = evaluate_on_linguistic(model_to_prune, tokenizer, evaluation_spec)
+        # Log pre-pruning evaluation (pruned_ratio = 0)
+        writer.writerow([
+            model_name,
+            benchmark,
+            lang,
+            0,
+            str(linguistic_eval),
+        ])
+        fout.flush()
+
         print(f"\n=== Pruning on linguistic benchmark '{benchmark}' ===")
         # Prepare data
         benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
@@ -84,25 +114,26 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages):
             model_to_prune = load_raw_model(model_name)
             model_to_prune.seqlen = max_cal_len
 
-
             # Prune and evaluate
             llama_sparsellm(
                 model_to_prune, benchmark_data, torch.device(DEVICE), ratio / 100.0
             )
 
-            # TODO evaluation differs, do it later
-            # Evaluate pruned model on GLUE benchmark
-            # benchmark_results = evaluate_model_on_dataset(model_to_prune, tokenizer, benchmark_data, benchmark)
+            linguistic_eval = evaluate_on_linguistic(model_to_prune, tokenizer, evaluation_spec)
 
-            # Save results with new format
-            # results_rows.append(
-            #     ["pruned", model_name, benchmark, f"{ratio}%"]
-            #     + [f"{metric:.4f}" for metric in benchmark_results]
-            # )
+            # Log post-pruning evaluation for this ratio
+            writer.writerow([
+                model_name,
+                benchmark,
+                lang,
+                ratio,
+                str(linguistic_eval),
+            ])
+            fout.flush()
 
             # Save model
             save_path = model_dir(
-                run_env['model_dir'], model_name, benchmark, LINGUISTIC_BENCHMARKS[benchmark]['lang'], ratio
+                run_env['model_dir'], model_name, benchmark, lang, ratio
             )
             # Move model to CPU for saving to avoid GPU memory spike during serialization
             model_to_prune.cpu()
@@ -110,6 +141,8 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages):
             thread = save_pruned_model_async(model_to_prune, save_path)
             save_threads.append(thread)
             print(f"Saving pruned model to {save_path} in a thread: {thread}")
+
+    fout.close()
 
     for thread in save_threads:
         thread.join()

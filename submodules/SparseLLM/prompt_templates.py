@@ -100,27 +100,31 @@ SELECTED_GLUE_TASKS = {
         "user_template": make_prompt_template(mnli_user_prompt),
         "assistant_template": make_prompt_template(mnli_assistant_prompt),
         # "sample_size": 3000
-        "sample_size": 30
+        "sample_size": 30,
+        "test_size": 30
     },
     "cola": {
         "system_template": make_prompt_template(cola_system_prompt),
         "user_template": make_prompt_template(cola_user_prompt),
         "assistant_template": make_prompt_template(cola_assistant_prompt),
         # "sample_size": 1000
-        "sample_size": 10
+        "sample_size": 10,
+        "test_size": 10
     },
     "qqp": {
         "system_template": make_prompt_template(qqp_system_prompt),
         "user_template": make_prompt_template(qqp_user_prompt),
         "assistant_template": make_prompt_template(qqp_assistant_prompt),
         # "sample_size": 2000
-        "sample_size": 20
+        "sample_size": 20,
+        "test_size": 20
     },
-    "stsb": {
-        "system_template": make_prompt_template(stsb_system_prompt),
-        "user_template": make_prompt_template(stsb_user_prompt),
-        "assistant_template": make_prompt_template(stsb_assistant_prompt),
-        # "sample_size": 1000
-        "sample_size": 10
-    }
+    # "stsb": {
+    #     "system_template": make_prompt_template(stsb_system_prompt),
+    #     "user_template": make_prompt_template(stsb_user_prompt),
+    #     "assistant_template": make_prompt_template(stsb_assistant_prompt),
+    #     # "sample_size": 1000
+    #     "sample_size": 10,
+    #     "test_size": 10
+    # }
 }

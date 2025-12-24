@@ -190,7 +190,7 @@ def _load_xglue_data(task_name, sample_size=None):
     return split.select(range(sample_size))
 
 
-def _load_glue_data(task_name, sample_size=None):
+def _load_glue_data(task_name, split='train', sample_size=None):
     """
     Load GLUE dataset for the specified task.
 
@@ -203,7 +203,7 @@ def _load_glue_data(task_name, sample_size=None):
         Dataset: The train split (possibly truncated to `sample_size`).
     """
     dataset = load_dataset("nyu-mll/glue", task_name)
-    train = dataset["train"]
+    train = dataset[split]
     if sample_size is None:
         return train
     # Guard against sample_size larger than available examples
@@ -248,7 +248,7 @@ def get_glue(tokenizer):
     """
 
     selected_glue_datasets = {
-        task: _load_glue_data(task, SELECTED_GLUE_TASKS[task]["sample_size"]) for task in SELECTED_GLUE_TASKS.keys()
+        task: _load_glue_data(task, sample_size=SELECTED_GLUE_TASKS[task]["sample_size"]) for task in SELECTED_GLUE_TASKS.keys()
     }
 
     for task, dataset in selected_glue_datasets.items():
