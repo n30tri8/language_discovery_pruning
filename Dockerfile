@@ -19,4 +19,4 @@ COPY main.py mmlu_evaluation.py pruning.py utils.py ./
 
 # Command to run the application
 ENTRYPOINT ["python", "main.py"]
-CMD ["--model", "Qwen/Qwen2.5-7B-Instruct", "--test_num", "400", "--sparsity_ratios", "50", "--run", "raw_eval", "prune", "cross_eval"]
+CMD ["--model", "Qwen/Qwen2.5-7B-Instruct", "--test_num", "400", "--sparsity_ratios", "50", "--run", "raw_eval", "prune", "cross_eval", "--languages", "en"]

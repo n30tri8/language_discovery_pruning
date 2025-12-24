@@ -28,17 +28,29 @@ LINGUISTIC_BENCHMARKS = {
     }
 }
 
+AVAILABLE_LANG_CODES = sorted({config["lang"] for config in LINGUISTIC_BENCHMARKS.values()})
+
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def evaluate_raw_model(model_name, test_num, run_env):
+def _normalize_languages(languages):
+    unique = []
+    seen = set()
+    for lang in languages:
+        if lang not in seen:
+            unique.append(lang)
+            seen.add(lang)
+    return unique
+
+
+def evaluate_raw_model(model_name, test_num, run_env, selected_languages):
     results_rows = []
 
     logs_file = os.path.join(run_env['results_dir'], "raw_model_eval.csv")
     print(f"\n=== Evaluating RAW model: {model_name} ===")
     tokenizer = setup_tokenizer(model_name)
     raw_model = load_raw_model(model_name)
-    languages = [LINGUISTIC_BENCHMARKS[b]['lang'] for b in LINGUISTIC_BENCHMARKS]
+    languages = selected_languages
     for subject in SUBJECTS:
         for lang in languages:
             subtask_acc = evaluate_model(raw_model, tokenizer, run_env['benchmark_data_dir'], subject, lang, test_num)
@@ -54,12 +66,15 @@ def evaluate_raw_model(model_name, test_num, run_env):
     print(f"\nRaw model evaluation done. Results saved to '{logs_file}'.")
 
 
-def prune(model_name, sparsity_ratios, run_env):
+def prune(model_name, sparsity_ratios, run_env, selected_languages):
     save_threads = []
 
     tokenizer = setup_tokenizer(model_name)
+    allowed_langs = set(selected_languages)
 
     for benchmark in LINGUISTIC_BENCHMARKS:
+        if LINGUISTIC_BENCHMARKS[benchmark]['lang'] not in allowed_langs:
+            continue
         print(f"\n=== Pruning on linguistic benchmark '{benchmark}' ===")
         # Prepare data
         benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
@@ -100,7 +115,7 @@ def prune(model_name, sparsity_ratios, run_env):
         thread.join()
 
 
-def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env):
+def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, selected_languages):
     tokenizer = setup_tokenizer(model_name)
 
     logs_file = os.path.join(run_env['results_dir'], "cross_benchmark_logs.csv")
@@ -117,8 +132,11 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env):
             "accuracy",
         ])
 
+    allowed_langs = set(selected_languages)
     for linguistic_pruned in LINGUISTIC_BENCHMARKS:
         lang = LINGUISTIC_BENCHMARKS[linguistic_pruned]['lang']
+        if lang not in allowed_langs:
+            continue
         load_path = model_dir(
             run_env['model_dir'], model_name, linguistic_pruned, lang, sparsity_ratios[0]
         )
@@ -191,15 +209,27 @@ if __name__ == "__main__":
         default=["raw_eval"],
         help="Which procedures to run. Choose any of: raw_eval prune cross_eval. Default: raw_eval.",
     )
+    parser.add_argument(
+        "--languages",
+        nargs="+",
+        choices=AVAILABLE_LANG_CODES,
+        default=AVAILABLE_LANG_CODES,
+        help=f"Subset of language codes to process (default: {', '.join(AVAILABLE_LANG_CODES)}).",
+    )
     args = parser.parse_args()
     to_run = set(args.run)
+
+    selected_languages = _normalize_languages(args.languages)
+    selected_langs_set = set(selected_languages)
+    if not any(cfg['lang'] in selected_langs_set for cfg in LINGUISTIC_BENCHMARKS.values()):
+        raise ValueError("No linguistic benchmarks match the provided languages.")
 
     setup_environment(args.seed, run_env['raw_model_dir'])
     apply_benchmark_dir(project_dir)
 
     if "raw_eval" in to_run:
-        evaluate_raw_model(args.model, args.test_num, run_env)
+        evaluate_raw_model(args.model, args.test_num, run_env, selected_languages)
     if "prune" in to_run:
-        prune(args.model, args.sparsity_ratios, run_env)
+        prune(args.model, args.sparsity_ratios, run_env, selected_languages)
     if "cross_eval" in to_run:
-        cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env)
+        cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env, selected_languages)
