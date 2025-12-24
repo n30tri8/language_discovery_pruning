@@ -26,7 +26,7 @@ def find_layers(module, layers=[nn.Linear], name=''):
     return res
 
 
-def prune_wanda(model, calib_data, args, device=torch.device("cuda:0")):
+def prune_wanda(model, calib_data, sparsity_ratio, device=torch.device("cuda:0")):
     """
     Modified Wanda function that uses already-collected calibration data
     (inps, attention_masks, position_embeddings) rather than reloading from dataset.
@@ -37,12 +37,10 @@ def prune_wanda(model, calib_data, args, device=torch.device("cuda:0")):
     model.model.norm = model.model.norm.to(device)
 
     inps = calib_data["inps"]
+    outs = calib_data["outs"]
     attention_masks = calib_data["attention_masks"]
-    position_embeddings = calib_data["position_embeddings"]
+    position_ids = calib_data['position_ids']
     nsamples = inps.shape[0]
-
-    # We'll create an 'outs' buffer for the next layer's input
-    outs = torch.zeros_like(inps)
 
     layers = model.model.layers
     for i, layer in enumerate(tqdm(layers, desc="Processing layers")):
@@ -75,7 +73,7 @@ def prune_wanda(model, calib_data, args, device=torch.device("cuda:0")):
                 outs[j] = layer(
                     inps[j].unsqueeze(0),
                     attention_mask=attention_masks[j],
-                    position_embeddings=position_embeddings[j],
+                    position_embeddings=position_ids
                 )[0]
 
         # remove hooks
@@ -96,7 +94,7 @@ def prune_wanda(model, calib_data, args, device=torch.device("cuda:0")):
             # unstructured pruning
             W_mask = torch.zeros_like(W_metric, dtype=torch.bool)
             # pick the fraction of smallest entries per-output
-            k = int(W_metric.shape[1] * args.sparsity_ratio)
+            k = int(W_metric.shape[1] * sparsity_ratio)
             sort_res = torch.sort(W_metric, dim=-1, stable=True)
             indices = sort_res[1][:, :k]
             W_mask.scatter_(1, indices, True)
@@ -108,7 +106,7 @@ def prune_wanda(model, calib_data, args, device=torch.device("cuda:0")):
                 outs[j] = layer(
                     inps[j].unsqueeze(0),
                     attention_mask=attention_masks[j],
-                    position_embeddings=position_embeddings[j],
+                    position_embeddings=position_ids
                 )[0]
 
         # swap
