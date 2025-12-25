@@ -73,7 +73,7 @@ def prune_wanda(model, calib_data, sparsity_ratio, device=torch.device("cuda:0")
                 outs[j] = layer(
                     inps[j].unsqueeze(0),
                     attention_mask=attention_masks[j],
-                    position_embeddings=position_ids
+                    position_ids=position_ids
                 )[0]
 
         # remove hooks
@@ -106,7 +106,7 @@ def prune_wanda(model, calib_data, sparsity_ratio, device=torch.device("cuda:0")
                 outs[j] = layer(
                     inps[j].unsqueeze(0),
                     attention_mask=attention_masks[j],
-                    position_embeddings=position_ids
+                    position_ids=position_ids
                 )[0]
 
         # swap
