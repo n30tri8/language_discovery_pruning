@@ -10,8 +10,11 @@ def _safe_get(d, key):
     return d[key] if key in d else ""
 
 
-def load_xnli_test(base_dir: str, lang: str, sample_size: int):
-    file = os.path.join(base_dir, "XNLI", f"{lang}.test")
+def load_xnli_test(base_dir: str, lang: str, sample_size: int, split="dev"):
+    if split == "dev":
+        file = os.path.join(base_dir, "XNLI", f"{lang}.dev")
+    elif split == "test":
+        file = os.path.join(base_dir, "XNLI", f"{lang}.test")
     data = []
     with open(file, encoding="utf-8") as f:
         processed = 0
@@ -30,8 +33,11 @@ def load_xnli_test(base_dir: str, lang: str, sample_size: int):
     return data
 
 
-def load_pawsx_test(base_dir: str, lang: str, sample_size: int):
-    file = os.path.join(base_dir, "PAWSX", lang, "test_2k.tsv")
+def load_pawsx_test(base_dir: str, lang: str, sample_size: int, split="dev"):
+    if split == "dev":
+        file = os.path.join(base_dir, "PAWSX", lang, "dev_2k.tsv")
+    elif split == "test":
+        file = os.path.join(base_dir, "PAWSX", lang, "test_2k.tsv")
     data = []
     with open(file, encoding="utf-8") as f:
         processed = 0
