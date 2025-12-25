@@ -5,11 +5,8 @@ from submodules.SparseLLM.prompt_templates import SELECTED_GLUE_TASKS
 
 class GlueEvalSpec(EvalSpec):
     def __init__(self):
-        super().__init__()
-        self.selected_tasks = SELECTED_GLUE_TASKS
-
+        super().__init__(SELECTED_GLUE_TASKS, benchmark_name="GLUE-EN")
         self.tasks = self.selected_tasks.keys()
-        self.benchmark_name = "GLUE-EN"
 
     def load_eval_data(self, task):
         if task == "mnli":
@@ -18,16 +15,6 @@ class GlueEvalSpec(EvalSpec):
             data = _load_glue_data(task, split='validation', sample_size=self.selected_tasks[task]["test_size"])
 
         return data
-
-    def build_system_prompt(self, task, record):
-        sys_prompt = self.selected_tasks[task]["system_template"](record)
-
-        return sys_prompt
-
-    def build_user_prompt(self, task, record):
-        user_prompt = self.selected_tasks[task]["user_template"](record)
-
-        return user_prompt
 
     def correct_answer(self, task, record):
         answer = str(record["label"])
@@ -49,8 +36,8 @@ class GlueEvalSpec(EvalSpec):
         # Define valid labels for each task
         valid_labels = {
             "mnli": ["0", "1", "2"],  # 0=entailment, 1=neutral, 2=contradiction
-            "cola": ["0", "1"],       # 0=unacceptable, 1=acceptable
-            "qqp": ["0", "1"]         # 0=not paraphrases, 1=paraphrases
+            "cola": ["0", "1"],  # 0=unacceptable, 1=acceptable
+            "qqp": ["0", "1"]  # 0=not paraphrases, 1=paraphrases
         }
 
         task_labels = valid_labels[task]

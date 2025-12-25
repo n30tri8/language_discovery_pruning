@@ -5,18 +5,23 @@ from utils import DEVICE
 
 
 class EvalSpec:
-    def __init__(self):
+    def __init__(self, selected_tasks, benchmark_name):
         self.tasks = None
-        self.benchmark_name: str = None
+        self.benchmark_name: str = benchmark_name
+        self.selected_tasks = selected_tasks
 
     def load_eval_data(self, **kwargs):
         pass
 
-    def build_system_prompt(self, **kwargs):
-        pass
+    def build_system_prompt(self, task, record):
+        sys_prompt = self.selected_tasks[task]["system_template"](record)
 
-    def build_user_prompt(self, **kwargs):
-        pass
+        return sys_prompt
+
+    def build_user_prompt(self, task, record):
+        user_prompt = self.selected_tasks[task]["user_template"](record)
+
+        return user_prompt
 
     def correct_answer(self, **kwargs):
         pass
