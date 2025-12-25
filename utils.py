@@ -49,8 +49,8 @@ def load_raw_model(model_name):
     transformers_logging.set_verbosity_info()  # shows INFO-level logs for this call only
 
     model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=RAW_MODEL_DIR,
-                                                 dtype=torch.float32,
-                                                 # Recommended for faster loading and better memory use
+                                                 dtype=torch.float16,
+                                                 # float16, float32 for cpu
                                                  )
 
     transformers_logging.set_verbosity_warning()  # shows INFO-level logs for this call only

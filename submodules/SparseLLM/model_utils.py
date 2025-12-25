@@ -5,7 +5,7 @@ from submodules.wanda.prune import prune_wanda
 
 
 @torch.no_grad()
-def llama_sparsellm(model, dataloader, dev, sparsity) -> None:
+def llama_sparsellm(model, dataloader, max_cal_len, dev, sparsity) -> None:
     """
     Replacement of the old 'llama_sparsellm' that now calls Wanda's prune_wanda
     using the calibration data from 'dataloader'.
@@ -15,7 +15,7 @@ def llama_sparsellm(model, dataloader, dev, sparsity) -> None:
     use_cache = model.config.use_cache
 
     with torch.no_grad():
-        calib_data = prepare_calibration(model, dataloader, dev)
+        calib_data = prepare_calibration(model, dataloader, max_cal_len, dev)
 
     prune_wanda(model, calib_data, sparsity, device=dev)
 
@@ -24,14 +24,13 @@ def llama_sparsellm(model, dataloader, dev, sparsity) -> None:
     print("Wanda-based pruning done!")
 
 
-def prepare_calibration(model, dataloader, dev):
+def prepare_calibration(model, dataloader, max_len, dev):
     model.config.use_cache = False
     layers = model.model.layers
     # We'll gather the hidden input states (inps) for each calibration sample,
     # plus the attention_mask and position_ids (mirroring old logic).
     dtype = next(iter(model.parameters())).dtype
     nsamples = len(dataloader)
-    max_len = dataloader[0][0].shape[1]  # The largest seq_len, same for all
     inps = torch.zeros(
         (nsamples, max_len, model.config.hidden_size), dtype=dtype, device=dev
     )
@@ -71,7 +70,7 @@ def prepare_calibration(model, dataloader, dev):
     for batch in dataloader:
         try:
             inp_ids = batch[0].to(dev)
-            _ = model(inp_ids, attention_mask=batch[2].to(dev), use_cache=False)
+            _ = model(inp_ids, attention_mask=batch[1].to(dev), use_cache=False)
         except ValueError:
             pass
     # Restore the actual layer

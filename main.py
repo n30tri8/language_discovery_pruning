@@ -116,7 +116,7 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages):
 
             # Prune and evaluate
             llama_sparsellm(
-                model_to_prune, benchmark_data, torch.device(DEVICE), ratio / 100.0
+                model_to_prune, benchmark_data, max_cal_len, torch.device(DEVICE), ratio / 100.0
             )
 
             linguistic_eval = evaluate_on_linguistic(model_to_prune, tokenizer, evaluation_spec)

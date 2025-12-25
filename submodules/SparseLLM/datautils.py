@@ -291,16 +291,9 @@ def get_glue(tokenizer):
             input_ids = torch.cat([input_ids, pad_ids], dim=1)
             attention_mask = torch.cat([attention_mask, pad_mask], dim=1)
 
-        # Now create the targets so that we are effectively doing next-token or LM-style supervision.
-        tar = input_ids.clone()
-        # Standard trick: mask everything except the “shifted by 1”
-        tar[:, :-1] = -100
+        train_loader.append((input_ids, attention_mask))
 
-        train_loader.append((input_ids, tar, attention_mask))
-
-    max_cal_len = max(inp.shape[1] for inp, _, _ in train_loader)
-
-    return train_loader, max_cal_len
+    return train_loader, max_len
 
 
 def _load_xglue_for_calibration(dataset_base_dir, lang) -> Dict[str, List]:
@@ -353,11 +346,7 @@ def _tokenize_and_pad(prompts, tokenizer):
             input_ids = torch.cat([input_ids, pad_ids], dim=1)
             attention_mask = torch.cat([attention_mask, pad_mask], dim=1)
 
-        # now create shifted-target (Wanda does not use it but format matches GLUE)
-        targets = input_ids.clone()
-        targets[:, :-1] = -100  # mask-out all except “next token”
-
-        processed.append((input_ids, targets, attention_mask))
+        processed.append((input_ids, attention_mask))
 
     return processed, max_len
 
