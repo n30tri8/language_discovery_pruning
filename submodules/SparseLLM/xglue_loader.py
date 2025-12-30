@@ -3,6 +3,7 @@
 ###################################
 import csv
 import os
+import json
 
 
 def _safe_get(d, key):
@@ -33,19 +34,51 @@ def load_xnli_test(base_dir: str, lang: str, sample_size: int, split="dev"):
 
 
 def load_pawsx_test(base_dir: str, lang: str, sample_size: int, split="dev"):
+    # Special handling for Italian, which is stored as JSONL under `it-translated`
+    if lang == "it":
+        if split == "dev":
+            file = os.path.join(base_dir, "PAWSX", "it-translated", "validation.jsonl")
+        elif split == "test":
+            file = os.path.join(base_dir, "PAWSX", "it-translated", "test.jsonl")
+        else:
+            raise ValueError(f"Unsupported split: {split}")
+        data = []
+        with open(file, encoding="utf-8") as f:
+            processed = 0
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                data.append({
+                    "sentence1": _safe_get(obj, "sentence1"),
+                    "sentence2": _safe_get(obj, "sentence2"),
+                    "label": _safe_get(obj, "label"),
+                })
+                processed += 1
+                if processed >= sample_size:
+                    break
+        return data
+
+    # Default handling for other languages using TSV files
     if split == "dev":
         file = os.path.join(base_dir, "PAWSX", lang, "dev_2k.tsv")
     elif split == "test":
         file = os.path.join(base_dir, "PAWSX", lang, "test_2k.tsv")
+    else:
+        raise ValueError(f"Unsupported split: {split}")
     data = []
     with open(file, encoding="utf-8") as f:
         processed = 0
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
             data.append({
-                "sentence1": row["sentence1"],
-                "sentence2": row["sentence2"],
-                "label": row["label"]
+                "sentence1": _safe_get(row, "sentence1"),
+                "sentence2": _safe_get(row, "sentence2"),
+                "label": _safe_get(row, "label")
             })
             processed += 1
             if processed >= sample_size:
