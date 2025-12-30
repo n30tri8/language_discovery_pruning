@@ -106,6 +106,102 @@ Phrase 2 : {sentence2}
 Ces phrases ont-elles le même sens ?
 """
 
+# ===== Italian =====
+xnli_system_prompt_it = """
+Sei un sistema di inferenza del linguaggio naturale.
+Data una premessa e un'ipotesi, decidi se l'ipotesi è implicata, contraddetta o neutra.
+Rispondi con uno di: entailment, contradiction, neutral.
+"""
+
+xnli_user_prompt_it = """
+Premessa: {premise}
+Ipotesi: {hypothesis}
+Qual è la relazione?
+"""
+
+pawsx_system_prompt_it = """
+Sei un sistema di identificazione di parafrasi.
+Restituisci 1 se le due frasi hanno lo stesso significato, altrimenti 0.
+"""
+
+pawsx_user_prompt_it = """
+Frase 1: {sentence1}
+Frase 2: {sentence2}
+Queste frasi hanno lo stesso significato?
+"""
+
+# ===== Hindi =====
+xnli_system_prompt_hi = """
+आप एक प्राकृतिक भाषा अनुमान प्रणाली हैं。
+एक आधार और एक परिकल्पना को देखते हुए, यह तय करें कि परिकल्पना निहित है, विरोधाभासी है, या तटस्थ है。
+इनमें से किसी एक के साथ उत्तर दें: entailment, contradiction, neutral。
+"""
+
+xnli_user_prompt_hi = """
+आधार: {premise}
+परिकल्पना: {hypothesis}
+क्या संबंध है?
+"""
+
+pawsx_system_prompt_hi = """
+आप एक पैराफ्रेज पहचान प्रणाली हैं。
+यदि दोनों वाक्यों का एक ही अर्थ है तो 1 लौटाएं, अन्यथा 0。
+"""
+
+pawsx_user_prompt_hi = """
+वाक्य 1: {sentence1}
+वाक्य 2: {sentence2}
+क्या इन वाक्यों का एक ही अर्थ है?
+"""
+
+# ===== Arabic =====
+xnli_system_prompt_ar = """
+أنت نظام استدلال لغوي طبيعي.
+بالنظر إلى فرضية ونظرية، قرر ما إذا كانت النظرية مستلزمة أو متناقضة أو محايدة.
+أجب بواحد مما يلي: entailment, contradiction, neutral.
+"""
+
+xnli_user_prompt_ar = """
+الفرضية: {premise}
+النظرية: {hypothesis}
+ما هي العلاقة؟
+"""
+
+pawsx_system_prompt_ar = """
+أنت نظام تعريف إعادة الصياغة.
+أرجع 1 إذا كانت الجملتان تعنيان نفس الشيء، وإلا فأرجع 0.
+"""
+
+pawsx_user_prompt_ar = """
+الجملة 1: {sentence1}
+الجملة 2: {sentence2}
+هل هاتان الجملتان لهما نفس المعنى؟
+"""
+
+# ===== Japanese =====
+xnli_system_prompt_ja = """
+あなたは自然言語推論システムです。
+前提と仮説が与えられた場合、仮説が含意、矛盾、または中立のいずれであるかを判断します。
+次の中から1つ選択して回答してください: entailment, contradiction, neutral。
+"""
+
+xnli_user_prompt_ja = """
+前提: {premise}
+仮説: {hypothesis}
+関係は何ですか？
+"""
+
+pawsx_system_prompt_ja = """
+あなたは言い換え識別システムです。
+2つの文が同じ意味を持つ場合は1を、そうでない場合は0を返します。
+"""
+
+pawsx_user_prompt_ja = """
+文1: {sentence1}
+文2: {sentence2}
+これらの文は同じ意味ですか？
+"""
+
 SELECTED_XGLUE_TASKS = {
     "xnli": {
         "sample_size": 500,
@@ -125,6 +221,26 @@ SELECTED_XGLUE_TASKS = {
             "user_template": make_prompt_template(xnli_user_prompt_fr),
             "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
         },
+        "it": {
+            "system_template": make_prompt_template(xnli_system_prompt_it),
+            "user_template": make_prompt_template(xnli_user_prompt_it),
+            "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
+        },
+        "hi": {
+            "system_template": make_prompt_template(xnli_system_prompt_hi),
+            "user_template": make_prompt_template(xnli_user_prompt_hi),
+            "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
+        },
+        "ar": {
+            "system_template": make_prompt_template(xnli_system_prompt_ar),
+            "user_template": make_prompt_template(xnli_user_prompt_ar),
+            "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
+        },
+        "ja": {
+            "system_template": make_prompt_template(xnli_system_prompt_ja),
+            "user_template": make_prompt_template(xnli_user_prompt_ja),
+            "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
+        },
     },
     "pawsx": {
         "sample_size": 500,
@@ -142,6 +258,26 @@ SELECTED_XGLUE_TASKS = {
         "fr": {
             "system_template": make_prompt_template(pawsx_system_prompt_fr),
             "user_template": make_prompt_template(pawsx_user_prompt_fr),
+            "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
+        },
+        "it": {
+            "system_template": make_prompt_template(pawsx_system_prompt_it),
+            "user_template": make_prompt_template(pawsx_user_prompt_it),
+            "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
+        },
+        "hi": {
+            "system_template": make_prompt_template(pawsx_system_prompt_hi),
+            "user_template": make_prompt_template(pawsx_user_prompt_hi),
+            "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
+        },
+        "ar": {
+            "system_template": make_prompt_template(pawsx_system_prompt_ar),
+            "user_template": make_prompt_template(pawsx_user_prompt_ar),
+            "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
+        },
+        "ja": {
+            "system_template": make_prompt_template(pawsx_system_prompt_ja),
+            "user_template": make_prompt_template(pawsx_user_prompt_ja),
             "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
         }
     }
