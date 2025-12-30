@@ -15,11 +15,11 @@ class XGlueEvalSpec(EvalSpec):
 
     def load_eval_data(self, task):
         if task == "xnli":
-            data = load_xnli_test(self.dataset_base_dir, self.lang, sample_size=self.selected_tasks[task]["test_size"],
-                                  split="test")
+            loader = load_xnli_test
         elif task == "pawsx":
-            data = load_pawsx_test(self.dataset_base_dir, self.lang, sample_size=self.selected_tasks[task]["test_size"],
-                                   split="test")
+            loader = load_pawsx_test
+        data = loader(self.dataset_base_dir, self.lang, sample_size=self.selected_tasks[task]["test_size"],
+                              split="test")
 
         return data
 
