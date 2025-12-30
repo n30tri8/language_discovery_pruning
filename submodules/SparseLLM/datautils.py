@@ -87,9 +87,9 @@ def _load_benchmark_data(benchmark_data_dir, subject, lang):
 
 def get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=32, test_num=5):
     """
-    Prepare the ToMBench calibration data (trainloader) and test data (list of leftover records).
+    Prepare the MMLU calibration data (trainloader) and test data (list of leftover records).
 
-    1) Loads subtask_file from ToMBench.
+    1) Loads language file from benchmark_data folder.
     2) Splits into 'train_num' for calibration vs. remainder for test.
     3) Builds a "calibration prompt" for each train record, then tokenizes & pads to the max length across them.
        The returned 'trainloader' is a list of (inp, tar) pairs, each shaped [1, seq_len].
