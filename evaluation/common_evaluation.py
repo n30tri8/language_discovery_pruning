@@ -23,8 +23,10 @@ class EvalSpec:
 
         return user_prompt
 
-    def correct_answer(self, **kwargs):
-        pass
+    def correct_answer(self, record, **kwargs):
+        answer = str(record["label"])
+
+        return answer
 
     def extract_answer(self, generated_text, **kwargs):
         pass
@@ -58,7 +60,7 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
             for rec in batch:
                 user_msg = evaluation_spec.build_user_prompt(task=task, record=rec)
                 user_msgs.append(user_msg)
-                crct_ans = evaluation_spec.correct_answer(task=task, record=rec)
+                crct_ans = evaluation_spec.correct_answer(record=rec)
                 correct_answers.append(crct_ans)
 
             # Tokenize batch

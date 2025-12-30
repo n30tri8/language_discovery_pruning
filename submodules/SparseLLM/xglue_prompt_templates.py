@@ -81,7 +81,7 @@ Do these sentences have the same meaning?
 """
 
 pawsx_assistant_prompt_all = """
-{label_text}
+{label}
 """
 
 pawsx_system_prompt_de = """

@@ -23,14 +23,6 @@ class XGlueEvalSpec(EvalSpec):
 
         return data
 
-    def correct_answer(self, task, record):
-        if task == "xnli":
-            answer = str(record["label"])
-        elif task == "pawsx":
-            answer = str(record["label_text"])
-
-        return answer
-
     def extract_answer(self, generated_text, **kwargs):
         """
         Extract the answer from generated text based on task-specific labels.

@@ -3,7 +3,6 @@
 ###################################
 import csv
 import os
-from submodules.SparseLLM.xglue_prompt_templates import SELECTED_XGLUE_TASKS
 
 
 def _safe_get(d, key):
@@ -46,7 +45,7 @@ def load_pawsx_test(base_dir: str, lang: str, sample_size: int, split="dev"):
             data.append({
                 "sentence1": row["sentence1"],
                 "sentence2": row["sentence2"],
-                "label_text": row["label"]
+                "label": row["label"]
             })
             processed += 1
             if processed >= sample_size:
@@ -79,6 +78,6 @@ def load_qam_test(base_dir: str, lang: str, sample_size: int):
                 data.append({
                     "question": parts[0],
                     "passage": parts[1],
-                    "label_text": "<unknown>"
+                    "label": "<unknown>"
                 })
     return data[:sample_size] if sample_size else data

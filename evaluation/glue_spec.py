@@ -16,11 +16,6 @@ class GlueEvalSpec(EvalSpec):
 
         return data
 
-    def correct_answer(self, task, record):
-        answer = str(record["label"])
-
-        return answer
-
     def extract_answer(self, generated_text, **kwargs):
         """
         Extract the answer from generated text based on task-specific labels.
