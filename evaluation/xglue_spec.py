@@ -23,6 +23,16 @@ class XGlueEvalSpec(EvalSpec):
 
         return data
 
+    def build_system_prompt(self, task, record):
+        sys_prompt = self.selected_tasks[task][self.lang]["system_template"](record)
+
+        return sys_prompt
+
+    def build_user_prompt(self, task, record):
+        user_prompt = self.selected_tasks[task][self.lang]["user_template"](record)
+
+        return user_prompt
+
     def extract_answer(self, generated_text, **kwargs):
         """
         Extract the answer from generated text based on task-specific labels.
