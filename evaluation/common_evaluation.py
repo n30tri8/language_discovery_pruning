@@ -5,10 +5,12 @@ from utils import DEVICE
 
 
 class EvalSpec:
-    def __init__(self, selected_tasks, benchmark_name):
+    def __init__(self, selected_tasks, benchmark_name, lang):
         self.tasks = None
         self.benchmark_name: str = benchmark_name
         self.selected_tasks = selected_tasks
+        self.tasks = self.selected_tasks.keys()
+        self.lang = lang
 
     def load_eval_data(self, **kwargs):
         pass

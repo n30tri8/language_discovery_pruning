@@ -5,10 +5,8 @@ from submodules.SparseLLM.xglue_prompt_templates import SELECTED_XGLUE_TASKS
 
 class XGlueEvalSpec(EvalSpec):
     def __init__(self, benchmark_name, lang):
-        super().__init__(SELECTED_XGLUE_TASKS, benchmark_name=benchmark_name)
+        super().__init__(SELECTED_XGLUE_TASKS, benchmark_name=benchmark_name, lang=lang)
         self.dataset_base_dir = None
-        self.tasks = self.selected_tasks.keys()
-        self.lang = lang
 
     def set_dataset_base_dir(self, dataset_base_dir):
         self.dataset_base_dir = dataset_base_dir
@@ -18,8 +16,10 @@ class XGlueEvalSpec(EvalSpec):
             loader = load_xnli_test
         elif task == "pawsx":
             loader = load_pawsx_test
+        else:
+            raise ValueError(f"Task '{task}' is not defined for XGlueEvalSpec")
         data = loader(self.dataset_base_dir, self.lang, sample_size=self.selected_tasks[task]["test_size"],
-                              split="test")
+                      split="test")
 
         return data
 

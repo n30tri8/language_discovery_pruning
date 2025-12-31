@@ -5,8 +5,7 @@ from submodules.SparseLLM.prompt_templates import SELECTED_GLUE_TASKS
 
 class GlueEvalSpec(EvalSpec):
     def __init__(self):
-        super().__init__(SELECTED_GLUE_TASKS, benchmark_name="GLUE-EN")
-        self.tasks = self.selected_tasks.keys()
+        super().__init__(SELECTED_GLUE_TASKS, benchmark_name="GLUE-EN", lang="en")
 
     def load_eval_data(self, task):
         if task == "mnli":
