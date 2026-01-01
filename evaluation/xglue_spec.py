@@ -17,7 +17,7 @@ class XGlueEvalSpec(EvalSpec):
         elif task == "pawsx":
             loader = load_pawsx_test
         else:
-            raise ValueError(f"Task '{task}' is not defined for XGlueEvalSpec")
+            raise ValueError(f"Task '{task}' is not defined for EvalSpec")
         data = loader(self.dataset_base_dir, self.lang, sample_size=self.selected_tasks[task]["test_size"],
                       split="test")
 
