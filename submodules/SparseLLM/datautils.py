@@ -2,6 +2,7 @@ import csv
 import os
 import random
 from typing import Dict, List
+import json
 
 import torch
 from datasets import load_dataset
@@ -9,8 +10,8 @@ from transformers import AutoTokenizer
 
 from submodules.SparseLLM.mmlu_prompt_templates import MMMLU_PROMPT
 from submodules.SparseLLM.prompt_templates import SELECTED_GLUE_TASKS
-from submodules.SparseLLM.xglue_loader import load_xnli_test, load_pawsx_test
-from submodules.SparseLLM.xglue_prompt_templates import SELECTED_XGLUE_TASKS
+from submodules.SparseLLM.xglue_loader import load_xnli_test, load_pawsx_test, load_pawsx_italian
+from submodules.SparseLLM.xglue_prompt_templates import SELECTED_XGLUE_TASKS, SELECTED_ITALIAN_TASKS
 
 
 def _shuffle_options(options, letter_map):
@@ -35,7 +36,7 @@ def _build_user_message(record, lang, shuffle=False):
     if shuffle:
         options, letter_map = _shuffle_options(options, letter_map)
 
-    replacement = {"question":record['question'], "options":options}
+    replacement = {"question": record['question'], "options": options}
     user_msg = MMMLU_PROMPT[lang]['user_template'](replacement)
 
     return user_msg, letter_map
@@ -160,36 +161,6 @@ def get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=32, test_nu
     return trainloader, test_records
 
 
-def _load_xglue_data(task_name, sample_size=None):
-    """
-    Load XGLUE dataset for the specified task.
-
-    Uses `load_dataset("microsoft/xglue", task_name)` and returns the train split
-    (or the first available split if a train split is not present).
-
-    Args:
-        task_name (str): The name of the XGLUE task/config.
-        sample_size (int, optional): Number of samples to keep from the train split.
-                                     If None, the full train split is returned.
-
-    Returns:
-        Dataset: The train split (possibly truncated to `sample_size`).
-    """
-    dataset = load_dataset("microsoft/xglue", task_name)
-    # Prefer explicit "train" split, otherwise fall back to the first split available
-    if "train" in dataset:
-        split = dataset["train"]
-    else:
-        first_split = list(dataset.keys())[0]
-        split = dataset[first_split]
-
-    if sample_size is None:
-        return split
-
-    sample_size = min(int(sample_size), len(split))
-    return split.select(range(sample_size))
-
-
 def _load_glue_data(task_name, split='train', sample_size=None):
     """
     Load GLUE dataset for the specified task.
@@ -248,7 +219,8 @@ def get_glue(tokenizer):
     """
 
     selected_glue_datasets = {
-        task: _load_glue_data(task, sample_size=SELECTED_GLUE_TASKS[task]["sample_size"]) for task in SELECTED_GLUE_TASKS.keys()
+        task: _load_glue_data(task, sample_size=SELECTED_GLUE_TASKS[task]["sample_size"]) for task in
+        SELECTED_GLUE_TASKS.keys()
     }
 
     for task, dataset in selected_glue_datasets.items():
@@ -366,6 +338,81 @@ def get_xglue(tokenizer, base_dir, lang):
     """
     # 1) load the structured chat messages for each task
     selected = _load_xglue_for_calibration(base_dir, lang=lang)
+
+    # 2) Convert system/user/assistant messages to raw chat strings
+    for task in selected:
+        selected[task] = [
+            tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=False
+            )
+            for messages in selected[task]
+        ]
+
+    # 3) Tokenize + pad
+    all_prompts = []
+    for task, entries in selected.items():
+        all_prompts.extend(entries)
+
+    train_loader, max_cal_len = _tokenize_and_pad(all_prompts, tokenizer)
+    return train_loader, max_cal_len
+
+
+def load_uinauil_textualentailmen(base_dir, split, sample_size):
+    if split == "dev":
+        file = "dev.json"
+    elif split == "test":
+        file = "test.json"
+    else:
+        raise ValueError(f"Unsupported split: {split}. Expected 'dev' or 'test'.")
+    file_path = os.path.join(base_dir, "uinauil-texualentailment", file)
+
+    with open(file_path, encoding="utf-8") as f:
+        try:
+            data = json.load(f)
+        except Exception as e:
+            raise ValueError(f"Failed to parse JSON file {file_path}: {e}")
+
+    selected_size = min(sample_size, len(data))
+
+    return data[:selected_size]
+
+
+def _load_italian_tasks_for_calibration(benchmark_base_dir) -> Dict[str, List]:
+    tasks = {}
+
+    # selectable tasks
+    tasks["uinauil-textualentailment"] = _build_prompts(
+        load_uinauil_textualentailmen(benchmark_base_dir, split='dev',
+                                      sample_size=SELECTED_ITALIAN_TASKS["uinauil-textualentailment"]["sample_size"]),
+        SELECTED_ITALIAN_TASKS["uinauil-textualentailment"]["system_template"],
+        SELECTED_ITALIAN_TASKS["uinauil-textualentailment"]["user_template"],
+        SELECTED_ITALIAN_TASKS["uinauil-textualentailment"]["assistant_template"]
+    )
+
+    tasks["pawsx-translated"] = _build_prompts(
+        load_pawsx_italian(benchmark_base_dir, SELECTED_ITALIAN_TASKS["pawsx-translated"]["sample_size"], split="dev"),
+        SELECTED_ITALIAN_TASKS["pawsx-translated"]["system_template"],
+        SELECTED_ITALIAN_TASKS["pawsx-translated"]["user_template"],
+        SELECTED_ITALIAN_TASKS["pawsx-translated"]["assistant_template"]
+    )
+
+    return tasks
+
+
+def get_italian_calib(tokenizer, base_dir):
+    """
+    Prepare XGLUE test splits for Wanda calibration, matching get_glue() structure.
+
+    Args:
+        tokenizer: tokenizer object
+        base_dir (str): path to benchmark_data/
+
+    Returns:
+        train_loader (list): list of (input_ids, targets, attention_mask)
+        max_cal_len (int): max token length observed
+    """
+    # 1) load the structured chat messages for each task
+    selected = _load_italian_tasks_for_calibration(base_dir)
 
     # 2) Convert system/user/assistant messages to raw chat strings
     for task in selected:

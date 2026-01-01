@@ -107,13 +107,13 @@ Ces phrases ont-elles le même sens ?
 """
 
 # ===== Italian =====
-xnli_system_prompt_it = """
+uiauil_system_prompt_it = """
 Sei un sistema di inferenza del linguaggio naturale.
-Data una premessa e un'ipotesi, decidi se l'ipotesi è implicata, contraddetta o neutra.
-Rispondi con uno di: entailment, contradiction, neutral.
+Data una premessa e un'ipotesi, il tuo compito è determinare se la premessa implica l'ipotesi.
+Rispondi con 1 se la premessa implica l'ipotesi, o 0 in caso contrario.
 """
 
-xnli_user_prompt_it = """
+uiauil_user_prompt_it = """
 Premessa: {premise}
 Ipotesi: {hypothesis}
 Qual è la relazione?
@@ -221,11 +221,6 @@ SELECTED_XGLUE_TASKS = {
             "user_template": make_prompt_template(xnli_user_prompt_fr),
             "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
         },
-        "it": {
-            "system_template": make_prompt_template(xnli_system_prompt_it),
-            "user_template": make_prompt_template(xnli_user_prompt_it),
-            "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
-        },
         "hi": {
             "system_template": make_prompt_template(xnli_system_prompt_hi),
             "user_template": make_prompt_template(xnli_user_prompt_hi),
@@ -260,11 +255,6 @@ SELECTED_XGLUE_TASKS = {
             "user_template": make_prompt_template(pawsx_user_prompt_fr),
             "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
         },
-        "it": {
-            "system_template": make_prompt_template(pawsx_system_prompt_it),
-            "user_template": make_prompt_template(pawsx_user_prompt_it),
-            "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
-        },
         "hi": {
             "system_template": make_prompt_template(pawsx_system_prompt_hi),
             "user_template": make_prompt_template(pawsx_user_prompt_hi),
@@ -280,5 +270,22 @@ SELECTED_XGLUE_TASKS = {
             "user_template": make_prompt_template(pawsx_user_prompt_ja),
             "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
         }
+    }
+}
+
+SELECTED_ITALIAN_TASKS = {
+    "pawsx-translated": {
+        "sample_size": 500,
+        "test_size": 50,
+        "system_template": make_prompt_template(pawsx_system_prompt_it),
+        "user_template": make_prompt_template(pawsx_user_prompt_it),
+        "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
+    },
+    "uinauil-textualentailment": {
+        "sample_size": 500,
+        "test_size": 50,
+        "system_template": make_prompt_template(uiauil_system_prompt_it),
+        "user_template": make_prompt_template(uiauil_user_prompt_it),
+        "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
     }
 }

@@ -7,9 +7,10 @@ import torch
 
 from evaluation.common_evaluation import evaluate_on_linguistic
 from evaluation.glue_spec import GlueEvalSpec
+from evaluation.it_spec import ITEvalSpec
 from evaluation.mmlu_evaluation import evaluate_model
 from evaluation.xglue_spec import XGlueEvalSpec
-from submodules.SparseLLM.datautils import get_xglue, get_glue
+from submodules.SparseLLM.datautils import get_xglue, get_glue, get_italian_calib
 from submodules.SparseLLM.model_utils import llama_sparsellm
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model_async, \
     load_pruned_model, model_dir
@@ -31,6 +32,11 @@ LINGUISTIC_BENCHMARKS = {
         "lang": "fr",
         "loader": get_xglue,
         "eval_spec": XGlueEvalSpec("XGLUE_FR", "fr")
+    },
+    "VARIED_IT": {
+        "lang": "it",
+        "loader": get_italian_calib,
+        "eval_spec": ITEvalSpec("VARIED_IT", "it")
     }
 }
 
@@ -188,16 +194,21 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
 
 def apply_benchmark_dir(proj_dir):
     xglue_base_dir = os.path.join(proj_dir, "benchmark_data", "xglue_dataset")
+    it_base_dir = os.path.join(proj_dir, "benchmark_data")
+
     for benchmark in LINGUISTIC_BENCHMARKS:
         lang = LINGUISTIC_BENCHMARKS[benchmark]['lang']
         loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
         if loader is get_xglue:
             partial_get_xglue = partial(get_xglue, base_dir=xglue_base_dir, lang=lang)
-
             LINGUISTIC_BENCHMARKS[benchmark]['loader'] = partial_get_xglue
-
             # also pass the base_dir to EvalSpec class
             LINGUISTIC_BENCHMARKS[benchmark]['eval_spec'].set_dataset_base_dir(xglue_base_dir)
+        elif lang == "it":
+            partial_get_italian_calib = partial(get_italian_calib, base_dir=it_base_dir)
+            LINGUISTIC_BENCHMARKS[benchmark]['loader'] = partial_get_italian_calib
+            # also pass the base_dir to EvalSpec class
+            LINGUISTIC_BENCHMARKS[benchmark]['eval_spec'].set_dataset_base_dir(it_base_dir)
 
 
 if __name__ == "__main__":
