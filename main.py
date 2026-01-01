@@ -40,8 +40,6 @@ LINGUISTIC_BENCHMARKS = {
     }
 }
 
-AVAILABLE_LANG_CODES = sorted({config["lang"] for config in LINGUISTIC_BENCHMARKS.values()})
-
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -257,6 +255,7 @@ if __name__ == "__main__":
         default=["raw_eval"],
         help="Which procedures to run. Choose any of: raw_eval prune cross_eval. Default: raw_eval.",
     )
+    AVAILABLE_LANG_CODES = sorted({config["lang"] for config in LINGUISTIC_BENCHMARKS.values()})
     parser.add_argument(
         "--languages",
         nargs="+",
