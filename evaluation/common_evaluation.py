@@ -85,7 +85,8 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
 
             # Decode and evaluate
             input_length = inputs["input_ids"].shape[1]
-            for i, out in enumerate(outputs):
+            for i in range(len(batch)):
+                out = outputs[i,:]
                 gen_part = out[input_length:]
                 gen_text = tokenizer.decode(gen_part, skip_special_tokens=True)
                 model_extracted_answer = evaluation_spec.extract_answer(gen_text, task=task)
