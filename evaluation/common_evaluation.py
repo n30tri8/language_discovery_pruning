@@ -55,8 +55,7 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
         # Pre-cache the system prompt as they are the same for all records
         system_msg = evaluation_spec.build_system_prompt(task=task, record=records[0])
 
-        for batch in tqdm(batches, desc=f"Evaluating on benchmark {evaluation_spec.benchmark_name}, task {task}",
-                          unit="batch"):
+        for batch in batches:
             # Preprocess batch
             user_msgs, correct_answers = [], []
             for rec in batch:
@@ -85,12 +84,12 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
 
             # Decode and evaluate
             input_length = inputs["input_ids"].shape[1]
-            for i in range(len(batch)):
-                out = outputs[i,:]
+            for idx in range(len(batch)):
+                out = outputs[idx,:]
                 gen_part = out[input_length:]
                 gen_text = tokenizer.decode(gen_part, skip_special_tokens=True)
                 model_extracted_answer = evaluation_spec.extract_answer(gen_text, task=task)
-                if model_extracted_answer == correct_answers[i]:
+                if model_extracted_answer == correct_answers[idx]:
                     correct += 1
 
         task_accuracy = correct / len(records)
