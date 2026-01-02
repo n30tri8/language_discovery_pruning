@@ -101,7 +101,7 @@ SELECTED_GLUE_TASKS = {
         "assistant_template": make_prompt_template(mnli_assistant_prompt),
         # "sample_size": 3000
         "sample_size": 30,
-        "test_size": 30
+        "test_size": 20
     },
     "cola": {
         "system_template": make_prompt_template(cola_system_prompt),

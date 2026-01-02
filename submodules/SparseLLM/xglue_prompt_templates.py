@@ -205,7 +205,7 @@ pawsx_user_prompt_ja = """
 SELECTED_XGLUE_TASKS = {
     "xnli": {
         "sample_size": 500,
-        "test_size": 50,
+        "test_size": 20,
         "en": {
             "system_template": make_prompt_template(xnli_system_prompt_en),
             "user_template": make_prompt_template(xnli_user_prompt_en),
@@ -239,7 +239,7 @@ SELECTED_XGLUE_TASKS = {
     },
     "pawsx": {
         "sample_size": 500,
-        "test_size": 50,
+        "test_size": 20,
         "en": {
             "system_template": make_prompt_template(pawsx_system_prompt_en),
             "user_template": make_prompt_template(pawsx_user_prompt_en),
@@ -276,14 +276,14 @@ SELECTED_XGLUE_TASKS = {
 SELECTED_ITALIAN_TASKS = {
     "pawsx-translated": {
         "sample_size": 500,
-        "test_size": 50,
+        "test_size": 20,
         "system_template": make_prompt_template(pawsx_system_prompt_it),
         "user_template": make_prompt_template(pawsx_user_prompt_it),
         "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
     },
     "uinauil-textualentailment": {
         "sample_size": 500,
-        "test_size": 50,
+        "test_size": 20,
         "system_template": make_prompt_template(uiauil_system_prompt_it),
         "user_template": make_prompt_template(uiauil_user_prompt_it),
         "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
