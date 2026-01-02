@@ -5,8 +5,8 @@ from submodules.SparseLLM.xglue_prompt_templates import SELECTED_ITALIAN_TASKS
 
 
 class ITEvalSpec(EvalSpec):
-    def __init__(self, benchmark_name, lang):
-        super().__init__(SELECTED_ITALIAN_TASKS, benchmark_name=benchmark_name, lang=lang)
+    def __init__(self, benchmark_name):
+        super().__init__(SELECTED_ITALIAN_TASKS, benchmark_name=benchmark_name, lang='it')
         self.dataset_base_dir = None
 
     def set_dataset_base_dir(self, dataset_base_dir):
@@ -63,10 +63,12 @@ class ITEvalSpec(EvalSpec):
             # Look for Italian words indicating entailment or no entailment
             text_lower = text.lower()
             # Words indicating entailment (1)
-            if any(word in text_lower for word in ["sì", "si", "vero", "corretto", "implica", "consegue", "deriva", "segue"]):
+            if any(word in text_lower for word in
+                   ["sì", "si", "vero", "corretto", "implica", "consegue", "deriva", "segue"]):
                 return "1"
             # Words indicating no entailment (0)
-            elif any(word in text_lower for word in ["no", "falso", "scorretto", "non implica", "non consegue", "non deriva", "non segue"]):
+            elif any(word in text_lower for word in
+                     ["no", "falso", "scorretto", "non implica", "non consegue", "non deriva", "non segue"]):
                 return "0"
 
         # ===== PAWSX TRANSLATED TASK =====
@@ -96,10 +98,12 @@ class ITEvalSpec(EvalSpec):
             # Look for Italian words indicating same or different meaning
             text_lower = text.lower()
             # Words indicating same meaning (1)
-            if any(word in text_lower for word in ["stesso", "uguale", "identico", "stesso significato", "medesimo", "equivalente", "sì", "si"]):
+            if any(word in text_lower for word in
+                   ["stesso", "uguale", "identico", "stesso significato", "medesimo", "equivalente", "sì", "si"]):
                 return "1"
             # Words indicating different meaning (0)
-            elif any(word in text_lower for word in ["diverso", "differente", "diverso significato", "distinto", "differisce", "no"]):
+            elif any(word in text_lower for word in
+                     ["diverso", "differente", "diverso significato", "distinto", "differisce", "no"]):
                 return "0"
 
         # If task is not recognized or nothing found, return empty string

@@ -11,7 +11,6 @@ def extract_answer(text: str) -> str:
     """
     Parse model output to find predicted A/B/C/D from patterns like [[A]] or the last letter we see.
     """
-    # todo, not suitable for languages that have different alphabet
     if "[A]" in text:
         return "A"
     elif "[B]" in text:
