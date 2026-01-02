@@ -1,8 +1,8 @@
 import csv
+import json
 import os
 import random
 from typing import Dict, List
-import json
 
 import torch
 from datasets import load_dataset
@@ -11,7 +11,8 @@ from transformers import AutoTokenizer
 from submodules.SparseLLM.mmlu_prompt_templates import MMMLU_PROMPT
 from submodules.SparseLLM.prompt_templates import SELECTED_GLUE_TASKS
 from submodules.SparseLLM.xglue_loader import load_xnli_test, load_pawsx_test, load_pawsx_italian
-from submodules.SparseLLM.xglue_prompt_templates import SELECTED_XGLUE_TASKS, SELECTED_ITALIAN_TASKS
+from submodules.SparseLLM.xglue_prompt_templates import SELECTED_XGLUE_TASKS, SELECTED_ITALIAN_TASKS, \
+    SELECTED_ARABIC_TASKS
 
 
 def _shuffle_options(options, letter_map):
@@ -161,27 +162,7 @@ def get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=32, test_nu
     return trainloader, test_records
 
 
-def _load_glue_data(task_name, split='train', sample_size=None):
-    """
-    Load GLUE dataset for the specified task.
-
-    Args:
-        task_name (str): The name of the GLUE task (e.g., 'sst2', 'mnli').
-        sample_size (int, optional): Number of samples to keep from the train split.
-                                     If None, the full train split is returned.
-
-    Returns:
-        Dataset: The train split (possibly truncated to `sample_size`).
-    """
-    dataset = load_dataset("nyu-mll/glue", task_name)
-    train = dataset[split]
-    if sample_size is None:
-        return train
-    # Guard against sample_size larger than available examples
-    sample_size = min(int(sample_size), len(train))
-    return train.select(range(sample_size))
-
-
+# LINGUISTIC BENCHMARKS
 def _build_prompts(data, sys, user, assistant):
     """
     Generic builder for chat-style message blocks.
@@ -206,6 +187,62 @@ def _build_prompts(data, sys, user, assistant):
         prompts.append(messages)
 
     return prompts
+
+
+def _tokenize_and_pad(prompts, tokenizer):
+    """Tokenize chat prompts and pad to max length like the GLUE loader."""
+    # First tokenize everything without padding
+    encoded = [
+        tokenizer(
+            txt, return_tensors="pt", add_special_tokens=False
+        )
+        for txt in prompts
+    ]
+
+    # Compute max length
+    max_len = max(enc["input_ids"].shape[1] for enc in encoded)
+
+    # Pad all to max length
+    processed = []
+    for enc in encoded:
+        input_ids = enc["input_ids"]
+        attention_mask = enc["attention_mask"]
+
+        pad_needed = max_len - input_ids.shape[1]
+        if pad_needed > 0:
+            pad_ids = torch.full(
+                (1, pad_needed), tokenizer.pad_token_id, dtype=torch.long
+            )
+            pad_mask = torch.zeros((1, pad_needed), dtype=torch.long)
+
+            input_ids = torch.cat([input_ids, pad_ids], dim=1)
+            attention_mask = torch.cat([attention_mask, pad_mask], dim=1)
+
+        processed.append((input_ids, attention_mask))
+
+    return processed, max_len
+
+
+# ENGLISH
+def _load_glue_data(task_name, split='train', sample_size=None):
+    """
+    Load GLUE dataset for the specified task.
+
+    Args:
+        task_name (str): The name of the GLUE task (e.g., 'sst2', 'mnli').
+        sample_size (int, optional): Number of samples to keep from the train split.
+                                     If None, the full train split is returned.
+
+    Returns:
+        Dataset: The train split (possibly truncated to `sample_size`).
+    """
+    dataset = load_dataset("nyu-mll/glue", task_name)
+    train = dataset[split]
+    if sample_size is None:
+        return train
+    # Guard against sample_size larger than available examples
+    sample_size = min(int(sample_size), len(train))
+    return train.select(range(sample_size))
 
 
 def get_glue(tokenizer):
@@ -268,6 +305,7 @@ def get_glue(tokenizer):
     return train_loader, max_len
 
 
+# XGLUE
 def _load_xglue_for_calibration(dataset_base_dir, lang) -> Dict[str, List]:
     tasks = {}
 
@@ -287,40 +325,6 @@ def _load_xglue_for_calibration(dataset_base_dir, lang) -> Dict[str, List]:
     )
 
     return tasks
-
-
-def _tokenize_and_pad(prompts, tokenizer):
-    """Tokenize chat prompts and pad to max length like the GLUE loader."""
-    # First tokenize everything without padding
-    encoded = [
-        tokenizer(
-            txt, return_tensors="pt", add_special_tokens=False
-        )
-        for txt in prompts
-    ]
-
-    # Compute max length
-    max_len = max(enc["input_ids"].shape[1] for enc in encoded)
-
-    # Pad all to max length
-    processed = []
-    for enc in encoded:
-        input_ids = enc["input_ids"]
-        attention_mask = enc["attention_mask"]
-
-        pad_needed = max_len - input_ids.shape[1]
-        if pad_needed > 0:
-            pad_ids = torch.full(
-                (1, pad_needed), tokenizer.pad_token_id, dtype=torch.long
-            )
-            pad_mask = torch.zeros((1, pad_needed), dtype=torch.long)
-
-            input_ids = torch.cat([input_ids, pad_ids], dim=1)
-            attention_mask = torch.cat([attention_mask, pad_mask], dim=1)
-
-        processed.append((input_ids, attention_mask))
-
-    return processed, max_len
 
 
 def get_xglue(tokenizer, base_dir, lang):
@@ -357,6 +361,7 @@ def get_xglue(tokenizer, base_dir, lang):
     return train_loader, max_cal_len
 
 
+# ITALIAN
 def load_uinauil_textualentailmen(base_dir, split, sample_size):
     if split == "dev":
         file = "dev.json"
@@ -401,7 +406,7 @@ def _load_italian_tasks_for_calibration(benchmark_base_dir) -> Dict[str, List]:
 
 def get_italian_calib(tokenizer, base_dir):
     """
-    Prepare XGLUE test splits for Wanda calibration, matching get_glue() structure.
+    Prepare italian test splits for Wanda calibration, matching get_glue() structure.
 
     Args:
         tokenizer: tokenizer object
@@ -432,6 +437,96 @@ def get_italian_calib(tokenizer, base_dir):
     return train_loader, max_cal_len
 
 
+# ARABIC
+def load_paraphrase_arabic(base_dir, split, sample_size):
+    if split == "dev":
+        file = "dev.csv"
+    elif split == "test":
+        file = "test.csv"
+    else:
+        raise ValueError(f"Unsupported split: {split}. Expected 'dev' or 'test'.")
+    file_path = os.path.join(base_dir, "Arabic-Paraphrasing-Benchmark", file)
+
+    data = []
+    try:
+        with open(file_path, encoding="utf-8") as f:
+            reader = csv.DictReader(f)  # assumes header: sentence1,sentence2,label
+            for row in reader:
+                if not row:
+                    continue  # ignore fully empty rows
+                # We assume the dataset is clean and has these keys
+                record = {
+                    "sentence1": row["sentence1"],
+                    "sentence2": row["sentence2"],
+                    "label": row["label"],  # kept as string, e.g. "0"/"1"
+                }
+                data.append(record)
+    except Exception as e:
+        raise ValueError(f"Failed to read CSV file {file_path}: {e}")
+
+    selected_size = min(int(sample_size), len(data))
+
+    return data[:selected_size]
+
+
+def _load_arabic_tasks_for_calibration(benchmark_base_dir) -> Dict[str, List]:
+    tasks = {}
+
+    # selectable tasks
+    xnli_base_dir = os.path.join(benchmark_base_dir, "xglue_dataset")
+    tasks["xnli"] = _build_prompts(
+        load_xnli_test(xnli_base_dir, lang='ar', split='dev',
+                       sample_size=SELECTED_ARABIC_TASKS["xnli"]["sample_size"]),
+        SELECTED_ARABIC_TASKS["xnli"]["system_template"],
+        SELECTED_ARABIC_TASKS["xnli"]["user_template"],
+        SELECTED_ARABIC_TASKS["xnli"]["assistant_template"]
+    )
+
+    tasks["paraphrase"] = _build_prompts(
+        load_paraphrase_arabic(benchmark_base_dir, sample_size=SELECTED_ARABIC_TASKS["paraphrase"]["sample_size"],
+                               split="dev"),
+        SELECTED_ARABIC_TASKS["paraphrase"]["system_template"],
+        SELECTED_ARABIC_TASKS["paraphrase"]["user_template"],
+        SELECTED_ARABIC_TASKS["paraphrase"]["assistant_template"]
+    )
+
+    return tasks
+
+
+def get_arabic_calib(tokenizer, base_dir):
+    """
+    Prepare arabic test splits for Wanda calibration, matching get_glue() structure.
+
+    Args:
+        tokenizer: tokenizer object
+        base_dir (str): path to benchmark_data/
+
+    Returns:
+        train_loader (list): list of (input_ids, targets, attention_mask)
+        max_cal_len (int): max token length observed
+    """
+    # 1) load the structured chat messages for each task
+    selected = _load_arabic_tasks_for_calibration(base_dir)
+
+    # 2) Convert system/user/assistant messages to raw chat strings
+    for task in selected:
+        selected[task] = [
+            tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=False
+            )
+            for messages in selected[task]
+        ]
+
+    # 3) Tokenize + pad
+    all_prompts = []
+    for task, entries in selected.items():
+        all_prompts.extend(entries)
+
+    train_loader, max_cal_len = _tokenize_and_pad(all_prompts, tokenizer)
+    return train_loader, max_cal_len
+
+
+# test cases
 def test_get_mmlu():
     subject, lang = "management", "EN"
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-3B-Instruct", use_fast=False,

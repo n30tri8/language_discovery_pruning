@@ -167,12 +167,12 @@ xnli_user_prompt_ar = """
 ما هي العلاقة؟
 """
 
-pawsx_system_prompt_ar = """
+paraphrase_system_prompt_ar = """
 أنت نظام تعريف إعادة الصياغة.
 أرجع 1 إذا كانت الجملتان تعنيان نفس الشيء، وإلا فأرجع 0.
 """
 
-pawsx_user_prompt_ar = """
+paraphrase_user_prompt_ar = """
 الجملة 1: {sentence1}
 الجملة 2: {sentence2}
 هل هاتان الجملتان لهما نفس المعنى؟
@@ -226,11 +226,6 @@ SELECTED_XGLUE_TASKS = {
             "user_template": make_prompt_template(xnli_user_prompt_hi),
             "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
         },
-        "ar": {
-            "system_template": make_prompt_template(xnli_system_prompt_ar),
-            "user_template": make_prompt_template(xnli_user_prompt_ar),
-            "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
-        },
         "ja": {
             "system_template": make_prompt_template(xnli_system_prompt_ja),
             "user_template": make_prompt_template(xnli_user_prompt_ja),
@@ -260,11 +255,6 @@ SELECTED_XGLUE_TASKS = {
             "user_template": make_prompt_template(pawsx_user_prompt_hi),
             "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
         },
-        "ar": {
-            "system_template": make_prompt_template(pawsx_system_prompt_ar),
-            "user_template": make_prompt_template(pawsx_user_prompt_ar),
-            "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
-        },
         "ja": {
             "system_template": make_prompt_template(pawsx_system_prompt_ja),
             "user_template": make_prompt_template(pawsx_user_prompt_ja),
@@ -286,6 +276,23 @@ SELECTED_ITALIAN_TASKS = {
         "test_size": 20,
         "system_template": make_prompt_template(uiauil_system_prompt_it),
         "user_template": make_prompt_template(uiauil_user_prompt_it),
+        "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
+    }
+}
+
+SELECTED_ARABIC_TASKS = {
+    "paraphrase": {
+        "sample_size": 500,
+        "test_size": 20,
+        "system_template": make_prompt_template(paraphrase_system_prompt_ar),
+        "user_template": make_prompt_template(paraphrase_user_prompt_ar),
+        "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
+    },
+    "xnli": {
+        "sample_size": 500,
+        "test_size": 20,
+        "system_template": make_prompt_template(xnli_system_prompt_ar),
+        "user_template": make_prompt_template(xnli_user_prompt_ar),
         "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
     }
 }
