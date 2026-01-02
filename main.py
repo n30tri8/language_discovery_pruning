@@ -8,10 +8,11 @@ import torch
 from evaluation.ar_spec import AREvalSpec
 from evaluation.common_evaluation import evaluate_on_linguistic
 from evaluation.glue_spec import GlueEvalSpec
+from evaluation.hi_spec import HIEvalSpec
 from evaluation.it_spec import ITEvalSpec
 from evaluation.mmlu_evaluation import evaluate_model
 from evaluation.xglue_spec import XGlueEvalSpec
-from submodules.SparseLLM.datautils import get_xglue, get_glue, get_italian_calib, get_arabic_calib
+from submodules.SparseLLM.datautils import get_xglue, get_glue, get_italian_calib, get_arabic_calib, get_hindi_calib
 from submodules.SparseLLM.model_utils import llama_sparsellm
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model_async, \
     load_pruned_model, model_dir
@@ -43,6 +44,11 @@ LINGUISTIC_BENCHMARKS = {
         "lang": "ar",
         "loader": get_arabic_calib,
         "eval_spec": AREvalSpec("VARIED_AR")
+    },
+    "VARIED_HI": {
+        "lang": "hi",
+        "loader": get_hindi_calib,
+        "eval_spec": HIEvalSpec("VARIED_HI")
     }
 }
 
@@ -216,6 +222,11 @@ def apply_benchmark_dir(proj_dir):
         elif lang == "ar":
             partial_get_arabic_calib = partial(get_arabic_calib, base_dir=benchmark_base_dir)
             LINGUISTIC_BENCHMARKS[benchmark]['loader'] = partial_get_arabic_calib
+            # also pass the base_dir to EvalSpec class
+            LINGUISTIC_BENCHMARKS[benchmark]['eval_spec'].set_dataset_base_dir(benchmark_base_dir)
+        elif lang == "hi":
+            partial_get_hindi_calib = partial(get_hindi_calib, base_dir=benchmark_base_dir)
+            LINGUISTIC_BENCHMARKS[benchmark]['loader'] = partial_get_hindi_calib
             # also pass the base_dir to EvalSpec class
             LINGUISTIC_BENCHMARKS[benchmark]['eval_spec'].set_dataset_base_dir(benchmark_base_dir)
 

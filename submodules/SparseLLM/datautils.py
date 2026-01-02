@@ -12,7 +12,7 @@ from submodules.SparseLLM.mmlu_prompt_templates import MMMLU_PROMPT
 from submodules.SparseLLM.prompt_templates import SELECTED_GLUE_TASKS
 from submodules.SparseLLM.xglue_loader import load_xnli_test, load_pawsx_test, load_pawsx_italian
 from submodules.SparseLLM.xglue_prompt_templates import SELECTED_XGLUE_TASKS, SELECTED_ITALIAN_TASKS, \
-    SELECTED_ARABIC_TASKS
+    SELECTED_ARABIC_TASKS, SELECTED_HINDI_TASKS
 
 
 def _shuffle_options(options, letter_map):
@@ -507,6 +507,94 @@ def get_arabic_calib(tokenizer, base_dir):
     """
     # 1) load the structured chat messages for each task
     selected = _load_arabic_tasks_for_calibration(base_dir)
+
+    # 2) Convert system/user/assistant messages to raw chat strings
+    for task in selected:
+        selected[task] = [
+            tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=False
+            )
+            for messages in selected[task]
+        ]
+
+    # 3) Tokenize + pad
+    all_prompts = []
+    for task, entries in selected.items():
+        all_prompts.extend(entries)
+
+    train_loader, max_cal_len = _tokenize_and_pad(all_prompts, tokenizer)
+    return train_loader, max_cal_len
+
+# Hindi
+def load_paraphrase_hindi(base_dir, split, sample_size):
+    if split == "dev":
+        file = "dev.csv"
+    elif split == "test":
+        file = "test.csv"
+    else:
+        raise ValueError(f"Unsupported split: {split}. Expected 'dev' or 'test'.")
+    file_path = os.path.join(base_dir, "IndicParaphrase", file)
+
+    data = []
+    try:
+        with open(file_path, encoding="utf-8") as f:
+            reader = csv.DictReader(f)  # assumes header: sentence1,sentence2,label
+            for row in reader:
+                if not row:
+                    continue  # ignore fully empty rows
+                # We assume the dataset is clean and has these keys
+                record = {
+                    "sentence1": row["sentence1"],
+                    "sentence2": row["sentence2"],
+                    "label": row["label"],  # kept as string, e.g. "0"/"1"
+                }
+                data.append(record)
+    except Exception as e:
+        raise ValueError(f"Failed to read CSV file {file_path}: {e}")
+
+    selected_size = min(int(sample_size), len(data))
+
+    return data[:selected_size]
+
+
+def _load_hindi_tasks_for_calibration(benchmark_base_dir) -> Dict[str, List]:
+    tasks = {}
+
+    # selectable tasks
+    xnli_base_dir = os.path.join(benchmark_base_dir, "xglue_dataset")
+    tasks["xnli"] = _build_prompts(
+        load_xnli_test(xnli_base_dir, lang='hi', split='dev',
+                       sample_size=SELECTED_HINDI_TASKS["xnli"]["sample_size"]),
+        SELECTED_HINDI_TASKS["xnli"]["system_template"],
+        SELECTED_HINDI_TASKS["xnli"]["user_template"],
+        SELECTED_HINDI_TASKS["xnli"]["assistant_template"]
+    )
+
+    tasks["paraphrase"] = _build_prompts(
+        load_paraphrase_hindi(benchmark_base_dir, sample_size=SELECTED_HINDI_TASKS["paraphrase"]["sample_size"],
+                               split="dev"),
+        SELECTED_HINDI_TASKS["paraphrase"]["system_template"],
+        SELECTED_HINDI_TASKS["paraphrase"]["user_template"],
+        SELECTED_HINDI_TASKS["paraphrase"]["assistant_template"]
+    )
+
+    return tasks
+
+
+def get_hindi_calib(tokenizer, base_dir):
+    """
+    Prepare hindi test splits for Wanda calibration, matching get_glue() structure.
+
+    Args:
+        tokenizer: tokenizer object
+        base_dir (str): path to benchmark_data/
+
+    Returns:
+        train_loader (list): list of (input_ids, targets, attention_mask)
+        max_cal_len (int): max token length observed
+    """
+    # 1) load the structured chat messages for each task
+    selected = _load_hindi_tasks_for_calibration(base_dir)
 
     # 2) Convert system/user/assistant messages to raw chat strings
     for task in selected:

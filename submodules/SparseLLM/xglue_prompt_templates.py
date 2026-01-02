@@ -143,12 +143,12 @@ xnli_user_prompt_hi = """
 क्या संबंध है?
 """
 
-pawsx_system_prompt_hi = """
+paraphrase_system_prompt_hi = """
 आप एक पैराफ्रेज पहचान प्रणाली हैं。
 यदि दोनों वाक्यों का एक ही अर्थ है तो 1 लौटाएं, अन्यथा 0。
 """
 
-pawsx_user_prompt_hi = """
+paraphrase_user_prompt_hi = """
 वाक्य 1: {sentence1}
 वाक्य 2: {sentence2}
 क्या इन वाक्यों का एक ही अर्थ है?
@@ -221,11 +221,6 @@ SELECTED_XGLUE_TASKS = {
             "user_template": make_prompt_template(xnli_user_prompt_fr),
             "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
         },
-        "hi": {
-            "system_template": make_prompt_template(xnli_system_prompt_hi),
-            "user_template": make_prompt_template(xnli_user_prompt_hi),
-            "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
-        },
         "ja": {
             "system_template": make_prompt_template(xnli_system_prompt_ja),
             "user_template": make_prompt_template(xnli_user_prompt_ja),
@@ -248,11 +243,6 @@ SELECTED_XGLUE_TASKS = {
         "fr": {
             "system_template": make_prompt_template(pawsx_system_prompt_fr),
             "user_template": make_prompt_template(pawsx_user_prompt_fr),
-            "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
-        },
-        "hi": {
-            "system_template": make_prompt_template(pawsx_system_prompt_hi),
-            "user_template": make_prompt_template(pawsx_user_prompt_hi),
             "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
         },
         "ja": {
@@ -293,6 +283,23 @@ SELECTED_ARABIC_TASKS = {
         "test_size": 20,
         "system_template": make_prompt_template(xnli_system_prompt_ar),
         "user_template": make_prompt_template(xnli_user_prompt_ar),
+        "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
+    }
+}
+
+SELECTED_HINDI_TASKS = {
+    "paraphrase": {
+        "sample_size": 500,
+        "test_size": 20,
+        "system_template": make_prompt_template(paraphrase_system_prompt_hi),
+        "user_template": make_prompt_template(paraphrase_user_prompt_hi),
+        "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
+    },
+    "xnli": {
+        "sample_size": 500,
+        "test_size": 20,
+        "system_template": make_prompt_template(xnli_system_prompt_hi),
+        "user_template": make_prompt_template(xnli_user_prompt_hi),
         "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
     }
 }
