@@ -17,7 +17,8 @@ from submodules.SparseLLM.model_utils import llama_sparsellm
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model_async, \
     load_pruned_model, model_dir
 
-SUBJECTS = ["philosophy", "professional_law", "high_school_mathematics", "professional_psychology"]
+SUBJECTS = ["philosophy", "professional_law", "high_school_mathematics", "professional_psychology",
+            "professional_medicine", "moral_disputes", "sociology", "marketing"]
 
 LINGUISTIC_BENCHMARKS = {
     "EN GLUE": {
@@ -25,6 +26,11 @@ LINGUISTIC_BENCHMARKS = {
         "loader": get_glue,
         "eval_spec": GlueEvalSpec()
     },
+    # "XGLUE_EN": {
+    #     "lang": "en",
+    #     "loader": get_xglue,
+    #     "eval_spec": XGlueEvalSpec("XGLUE_EN", "en")
+    # },
     "XGLUE_DE": {
         "lang": "de",
         "loader": get_xglue,
