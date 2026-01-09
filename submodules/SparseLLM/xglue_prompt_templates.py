@@ -204,8 +204,8 @@ pawsx_user_prompt_ja = """
 
 SELECTED_XGLUE_TASKS = {
     "xnli": {
-        "sample_size": 500,
-        "test_size": 20,
+        "sample_size": 800,
+        "test_size": 75,
         "en": {
             "system_template": make_prompt_template(xnli_system_prompt_en),
             "user_template": make_prompt_template(xnli_user_prompt_en),
@@ -221,15 +221,15 @@ SELECTED_XGLUE_TASKS = {
             "user_template": make_prompt_template(xnli_user_prompt_fr),
             "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
         },
-        "ja": {
-            "system_template": make_prompt_template(xnli_system_prompt_ja),
-            "user_template": make_prompt_template(xnli_user_prompt_ja),
-            "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
-        },
+        # "ja": {
+        #     "system_template": make_prompt_template(xnli_system_prompt_ja),
+        #     "user_template": make_prompt_template(xnli_user_prompt_ja),
+        #     "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
+        # },
     },
     "pawsx": {
-        "sample_size": 500,
-        "test_size": 20,
+        "sample_size": 800,
+        "test_size": 75,
         "en": {
             "system_template": make_prompt_template(pawsx_system_prompt_en),
             "user_template": make_prompt_template(pawsx_user_prompt_en),
@@ -245,25 +245,25 @@ SELECTED_XGLUE_TASKS = {
             "user_template": make_prompt_template(pawsx_user_prompt_fr),
             "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
         },
-        "ja": {
-            "system_template": make_prompt_template(pawsx_system_prompt_ja),
-            "user_template": make_prompt_template(pawsx_user_prompt_ja),
-            "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
-        }
+        # "ja": {
+        #     "system_template": make_prompt_template(pawsx_system_prompt_ja),
+        #     "user_template": make_prompt_template(pawsx_user_prompt_ja),
+        #     "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
+        # }
     }
 }
 
 SELECTED_ITALIAN_TASKS = {
     "pawsx-translated": {
-        "sample_size": 500,
-        "test_size": 20,
+        "sample_size": 800,
+        "test_size": 75,
         "system_template": make_prompt_template(pawsx_system_prompt_it),
         "user_template": make_prompt_template(pawsx_user_prompt_it),
         "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
     },
     "uinauil-textualentailment": {
-        "sample_size": 500,
-        "test_size": 20,
+        "sample_size": 700,
+        "test_size": 75,
         "system_template": make_prompt_template(uiauil_system_prompt_it),
         "user_template": make_prompt_template(uiauil_user_prompt_it),
         "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
@@ -272,15 +272,15 @@ SELECTED_ITALIAN_TASKS = {
 
 SELECTED_ARABIC_TASKS = {
     "paraphrase": {
-        "sample_size": 500,
-        "test_size": 20,
+        "sample_size": 800,
+        "test_size": 75,
         "system_template": make_prompt_template(paraphrase_system_prompt_ar),
         "user_template": make_prompt_template(paraphrase_user_prompt_ar),
         "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
     },
     "xnli": {
-        "sample_size": 500,
-        "test_size": 20,
+        "sample_size": 800,
+        "test_size": 75,
         "system_template": make_prompt_template(xnli_system_prompt_ar),
         "user_template": make_prompt_template(xnli_user_prompt_ar),
         "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
@@ -289,15 +289,15 @@ SELECTED_ARABIC_TASKS = {
 
 SELECTED_HINDI_TASKS = {
     "paraphrase": {
-        "sample_size": 500,
-        "test_size": 20,
+        "sample_size": 800,
+        "test_size": 75,
         "system_template": make_prompt_template(paraphrase_system_prompt_hi),
         "user_template": make_prompt_template(paraphrase_user_prompt_hi),
         "assistant_template": make_prompt_template(pawsx_assistant_prompt_all),
     },
     "xnli": {
-        "sample_size": 500,
-        "test_size": 20,
+        "sample_size": 800,
+        "test_size": 75,
         "system_template": make_prompt_template(xnli_system_prompt_hi),
         "user_template": make_prompt_template(xnli_user_prompt_hi),
         "assistant_template": make_prompt_template(xnli_assistant_prompt_all)
