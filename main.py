@@ -21,16 +21,16 @@ SUBJECTS = ["philosophy", "professional_law", "high_school_mathematics", "profes
             "professional_medicine", "moral_disputes", "sociology", "marketing"]
 
 LINGUISTIC_BENCHMARKS = {
-    "EN GLUE": {
-        "lang": "en",
-        "loader": get_glue,
-        "eval_spec": GlueEvalSpec()
-    },
-    # "XGLUE_EN": {
+    # "EN GLUE": {
     #     "lang": "en",
-    #     "loader": get_xglue,
-    #     "eval_spec": XGlueEvalSpec("XGLUE_EN", "en")
+    #     "loader": get_glue,
+    #     "eval_spec": GlueEvalSpec()
     # },
+    "XGLUE_EN": {
+        "lang": "en",
+        "loader": get_xglue,
+        "eval_spec": XGlueEvalSpec("XGLUE_EN", "en")
+    },
     "XGLUE_DE": {
         "lang": "de",
         "loader": get_xglue,
@@ -238,17 +238,19 @@ def apply_benchmark_dir(proj_dir):
 
 
 if __name__ == "__main__":
-    is_local = os.environ.get('LOCAL_RUN') is not None
-    is_local_docker = os.environ.get('LOCAL_DOCKER_RUN') is not None
+    runtime_env_arg = os.environ.get('RUN_ENV')
     run_env = {}
     project_dir = os.path.dirname(os.path.abspath(__file__))
-    if is_local:
-        run_env['root_storage_dir'] = os.path.dirname(os.path.abspath(__file__))
+    if runtime_env_arg == 'local':
+        run_env['root_storage_dir'] = project_dir
         run_env['model_dir'] = os.path.expanduser("~/.cache/huggingface/hub")
-    elif is_local_docker:
+    elif runtime_env_arg == 'local_docker':
         run_env['root_storage_dir'] = "/app/dev_root"
         run_env['model_dir'] = "/app/dev_pruned_models"
-    else:
+    elif runtime_env_arg == 'prod_os':
+        run_env['root_storage_dir'] = project_dir
+        run_env['model_dir'] = "/mnt/povobackup/clic/p.torabi"
+    elif runtime_env_arg == 'google_cloud':
         run_env['root_storage_dir'] = "/gcs/language-discovery-pruning/"
         run_env['model_dir'] = os.path.join(run_env['root_storage_dir'], ".cache/huggingface/hub")
     run_env['raw_model_dir'] = os.path.join(project_dir, "raw_model")
