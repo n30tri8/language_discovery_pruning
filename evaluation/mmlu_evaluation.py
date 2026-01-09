@@ -44,7 +44,6 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
     if len(subject_records) == 0:
         return 0.0
 
-    model = model.to(device)
     correct = 0
 
     batches = [
@@ -72,7 +71,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
         ]
         chat_texts = [tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True) for msg in
                       messages]
-        inputs = tokenizer(chat_texts, return_tensors="pt", padding=True, truncation=True).to(device)
+        inputs = tokenizer(chat_texts, return_tensors="pt", padding=True, truncation=True)
 
         # Generate outputs
         outputs = model.generate(

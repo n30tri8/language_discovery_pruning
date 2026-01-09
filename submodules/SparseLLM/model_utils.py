@@ -64,19 +64,14 @@ def prepare_calibration(model, dataloader, max_len, dev):
 
     # Hook the first layer
     layers[0] = Catcher(layers[0]).to(dev)
-    # Move embedding + norm to dev so forward will run
-    model.model.embed_tokens = model.model.embed_tokens.to(dev)
-    model.model.norm = model.model.norm.to(dev)
     for batch in dataloader:
         try:
-            inp_ids = batch[0].to(dev)
-            _ = model(inp_ids, attention_mask=batch[1].to(dev), use_cache=False)
+            inp_ids = batch[0]
+            _ = model(inp_ids, attention_mask=batch[1], use_cache=False)
         except ValueError:
             pass
     # Restore the actual layer
     layers[0] = layers[0].module
-    model.model.embed_tokens = model.model.embed_tokens.cpu()
-    model.model.norm = model.model.norm.cpu()
     torch.cuda.empty_cache()
 
     outs = torch.zeros_like(inps)

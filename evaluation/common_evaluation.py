@@ -44,7 +44,6 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
             task_accuracies[task] = 0.0
             continue
 
-        model = model.to(device)
         correct = 0
 
         batches = [
@@ -71,7 +70,7 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
             ]
             chat_texts = [tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True) for msg in
                           messages]
-            inputs = tokenizer(chat_texts, return_tensors="pt", padding=True, truncation=True).to(device)
+            inputs = tokenizer(chat_texts, return_tensors="pt", padding=True, truncation=True)
 
             # Generate outputs
             outputs = model.generate(

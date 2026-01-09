@@ -82,7 +82,6 @@ def evaluate_raw_model(model_name, test_num, run_env, selected_languages):
             results_rows.append([model_name, subject, lang, f"{subtask_acc:.4f}"])
 
     # Cleanup raw model
-    raw_model.cpu()
     del raw_model
     torch.cuda.empty_cache()
 

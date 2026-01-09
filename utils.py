@@ -57,7 +57,6 @@ def load_raw_model(model_name):
 
     transformers_logging.set_verbosity_warning()  # shows INFO-level logs for this call only
 
-    model = model.to(DEVICE)
     model.eval()
     return model
 
@@ -109,8 +108,7 @@ def load_pruned_model(load_path, device=DEVICE):
     if not os.path.isdir(load_path):
         raise FileNotFoundError(f"Pruned model not found at `{load_path}`")
     model = AutoModelForCausalLM.from_pretrained(
-        load_path, dtype=torch.float16, low_cpu_mem_usage=True
+        load_path, dtype=torch.float16, device_map="auto"
     )
-    model = model.to(device)
     model.eval()
     return model, load_path

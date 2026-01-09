@@ -33,8 +33,6 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
     """
     use_cache = model.config.use_cache
     model.config.use_cache = False
-    model.model.embed_tokens = model.model.embed_tokens.to(device)
-    model.model.norm = model.model.norm.to(device)
 
     inps = calib_data["inps"]
     outs = calib_data["outs"]
@@ -110,11 +108,9 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
                 )[0]
 
         # swap
-        layers[i] = layer.cpu()
+        layers[i] = layer
         inps, outs = outs, inps
         torch.cuda.empty_cache()
 
     model.config.use_cache = use_cache
-    model.model.embed_tokens = model.model.embed_tokens.cpu()
-    model.model.norm = model.model.norm.cpu()
     torch.cuda.empty_cache()
