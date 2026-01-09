@@ -42,8 +42,6 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
 
     layers = model.model.layers
     for i, layer in enumerate(tqdm(layers, desc="Processing layers")):
-        # Move layer to a device
-        layer = layer.to(device)
         subset = find_layers(layer)
 
         # For each sub-layer, wrap it so we can track input norms
