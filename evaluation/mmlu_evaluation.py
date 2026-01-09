@@ -37,7 +37,7 @@ def format_user_prompt(record, lang, shuffle_choices=True):
 
 
 @torch.inference_mode()
-def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, batch_size, device="cuda"):
+def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, batch_size, device=DEVICE):
     """
     Evaluate a *finetuned or pruned* model on a list of leftover test records.
     """

@@ -7,15 +7,14 @@ import torch
 
 from evaluation.ar_spec import AREvalSpec
 from evaluation.common_evaluation import evaluate_on_linguistic
-from evaluation.glue_spec import GlueEvalSpec
 from evaluation.hi_spec import HIEvalSpec
 from evaluation.it_spec import ITEvalSpec
 from evaluation.mmlu_evaluation import evaluate_model
 from evaluation.xglue_spec import XGlueEvalSpec
-from submodules.SparseLLM.datautils import get_xglue, get_glue, get_italian_calib, get_arabic_calib, get_hindi_calib
+from submodules.SparseLLM.datautils import get_xglue, get_italian_calib, get_arabic_calib, get_hindi_calib
 from submodules.SparseLLM.model_utils import llama_sparsellm
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model_async, \
-    load_pruned_model, model_dir
+    load_pruned_model, model_dir, DEVICE
 
 SUBJECTS = ["philosophy", "professional_law", "high_school_mathematics", "professional_psychology",
             "professional_medicine", "moral_disputes", "sociology", "marketing"]
@@ -57,8 +56,6 @@ LINGUISTIC_BENCHMARKS = {
         "eval_spec": HIEvalSpec("VARIED_HI")
     }
 }
-
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def _normalize_languages(languages):

@@ -26,7 +26,7 @@ def find_layers(module, layers=[nn.Linear], name=''):
     return res
 
 
-def prune_wanda(model, calib_data, sparsity_ratio, device=torch.device("cuda:0")):
+def prune_wanda(model, calib_data, sparsity_ratio, device):
     """
     Modified Wanda function that uses already-collected calibration data
     (inps, attention_masks, position_embeddings) rather than reloading from dataset.

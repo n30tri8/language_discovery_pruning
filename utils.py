@@ -9,7 +9,8 @@ from huggingface_hub import login
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.utils import logging as transformers_logging
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+gpu_index = os.environ.get("CUDA_DEVICE", "0")
+DEVICE = f"cuda:{gpu_index}" if torch.cuda.is_available() else "cpu"
 # Default cache dir; can be overridden by setup_environment
 RAW_MODEL_DIR = "raw_model"
 
