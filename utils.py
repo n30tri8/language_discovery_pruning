@@ -58,6 +58,8 @@ def load_raw_model(model_name):
     transformers_logging.set_verbosity_warning()  # shows INFO-level logs for this call only
 
     model.eval()
+    model.generation_config.do_sample = False
+    model.generation_config.temperature = None
     return model
 
 
@@ -111,4 +113,6 @@ def load_pruned_model(load_path, device=DEVICE):
         load_path, dtype=torch.float16, device_map="auto"
     )
     model.eval()
+    model.generation_config.do_sample = False
+    model.generation_config.temperature = None
     return model, load_path
