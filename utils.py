@@ -7,8 +7,6 @@ import numpy as np
 import torch
 from huggingface_hub import login
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from transformers.utils import logging as transformers_logging
-
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Default cache dir; can be overridden by setup_environment
@@ -47,19 +45,14 @@ def setup_tokenizer(model_name):
 
 def load_raw_model(model_name):
     """Load model with appropriate settings."""
-    transformers_logging.set_verbosity_info()  # shows INFO-level logs for this call only
-
     model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=RAW_MODEL_DIR,
                                                  dtype=torch.float16,
                                                  # float16, float32 for cpu
-                                                 device_map="auto" # for multi gpu support
+                                                 device_map="auto"  # for multi gpu support
                                                  )
-
-    transformers_logging.set_verbosity_warning()  # shows INFO-level logs for this call only
-
-    model.eval()
     model.generation_config.do_sample = False
-    model.generation_config.temperature = None
+    model.generation_config.top_p = None
+    model.eval()
     return model
 
 
@@ -112,7 +105,7 @@ def load_pruned_model(load_path, device=DEVICE):
     model = AutoModelForCausalLM.from_pretrained(
         load_path, dtype=torch.float16, device_map="auto"
     )
-    model.eval()
     model.generation_config.do_sample = False
-    model.generation_config.temperature = None
+    model.generation_config.top_p = None
+    model.eval()
     return model, load_path
