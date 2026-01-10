@@ -4,6 +4,7 @@ from tqdm import tqdm
 
 from .layerwrapper import WrappedGPT
 
+
 def find_layers(module, layers=[nn.Linear], name=''):
     """
     Recursively find the layers of a certain type in a module.
@@ -37,7 +38,8 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
     inps = calib_data["inps"]
     outs = calib_data["outs"]
     attention_masks = calib_data["attention_masks"]
-    position_ids = calib_data['position_ids']
+    position_embeddings_0 = calib_data["position_embeddings_0"]
+    position_embeddings_1 = calib_data["position_embeddings_1"]
     nsamples = inps.shape[0]
 
     layers = model.model.layers
@@ -46,8 +48,10 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
 
         if f"model.layers.{i}" in model.hf_device_map:  ## handle the case for when the device map has multiple GPUs;
             dev = model.hf_device_map[f"model.layers.{i}"]
-            inps, outs, attention_masks, position_ids = inps.to(dev), outs.to(dev), attention_masks.to(
-                dev), position_ids.to(dev)
+            inps, outs, attention_masks, position_embeddings_0, position_embeddings_1 = (inps.to(dev), outs.to(dev),
+                                                                                         attention_masks.to(dev),
+                                                                                         position_embeddings_0.to(dev),
+                                                                                         position_embeddings_1.to(dev))
 
         # For each sub-layer, wrap it so we can track input norms
         wrapped_layers = {}
@@ -73,8 +77,8 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
             for j in range(nsamples):
                 outs[j] = layer(
                     inps[j].unsqueeze(0),
-                    attention_mask=attention_masks[j],
-                    position_ids=position_ids
+                    attention_mask=attention_masks[j].unsqueeze(0),
+                    position_embeddings=(position_embeddings_0, position_embeddings_1)
                 )[0]
 
         # remove hooks
@@ -83,9 +87,9 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
 
         # Wanda: unstructured => pick top-K
         for name in tqdm(
-            wrapped_layers.keys(),
-            desc=f"Pruning sublayers in layer {i} name {name}",
-            leave=False,
+                wrapped_layers.keys(),
+                desc=f"Pruning sublayers in layer {i} name {name}",
+                leave=False,
         ):
             # Weighted metric = abs(W) * sqrt( row-norm of input )
             W = subset[name].weight.data
@@ -106,8 +110,8 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
             for j in range(nsamples):
                 outs[j] = layer(
                     inps[j].unsqueeze(0),
-                    attention_mask=attention_masks[j],
-                    position_ids=position_ids
+                    attention_mask=attention_masks[j].unsqueeze(0),
+                    position_embeddings=(position_embeddings_0, position_embeddings_1)
                 )[0]
 
         # swap
@@ -115,5 +119,9 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
         inps, outs = outs, inps
         # torch.cuda.empty_cache()
 
+    inps, outs, attention_masks, position_embeddings_0, position_embeddings_1 = (inps.cpu(), outs.cpu(),
+                                                                                 attention_masks.cpu(),
+                                                                                 position_embeddings_0.cpu(),
+                                                                                 position_embeddings_1.cpu())
     model.config.use_cache = use_cache
     torch.cuda.empty_cache()

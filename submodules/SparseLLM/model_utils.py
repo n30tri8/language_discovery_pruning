@@ -32,14 +32,16 @@ def prepare_calibration(model, dataloader, max_len, dev):
     # plus the attention_mask and position_ids (mirroring old logic).
     dtype = next(iter(model.parameters())).dtype
     nsamples = len(dataloader)
-    inps = torch.zeros(
-        (nsamples, max_len, model.config.hidden_size), dtype=dtype, device=dev
-    )
+    inps = torch.zeros((nsamples, max_len, model.config.hidden_size), dtype=dtype)
     inps.requires_grad = False
-    attention_masks = [None] * nsamples
-    # We'll use a forward hook on the first layer to capture the hidden states
-    cache = {'i': 0, 'position_ids': None}
+    attention_masks = torch.zeros((nsamples, 1, max_len, max_len), dtype=torch.bool)
+    position_embeddings_0 = torch.zeros((1, max_len, model.config.head_dim), dtype=torch.float16)
+    position_embeddings_1 = torch.zeros((1, max_len, model.config.head_dim), dtype=torch.float16)
+    position_embeddings_0.requires_grad = False
+    position_embeddings_1.requires_grad = False
+    cache = {'i': 0, 'position_embeddings_0': position_embeddings_0, 'position_embeddings_1': position_embeddings_1}
 
+    # We'll use a forward hook on the first layer to capture the hidden states
     class Catcher(nn.Module):
         def __init__(self, module):
             super().__init__()
@@ -57,14 +59,29 @@ def prepare_calibration(model, dataloader, max_len, dev):
 
         def forward(self, hidden_states, **kwargs):
             idx = cache["i"]
-            inps[idx, : hidden_states.size(1)] = hidden_states
-            attention_masks[idx] = kwargs['attention_mask']
-            cache['position_ids'] = kwargs['position_ids']
+            attn = kwargs.get("attention_mask")
+            if attn is None:  # no padding
+                token_mask = torch.ones(max_len, dtype=torch.bool)
+                attn = token_mask[:max_len].unsqueeze(1) & token_mask[:max_len].unsqueeze(0)
+                attn = attn.unsqueeze(0)
+            elif attn.dim() == 4:
+                attn = attn[0]
+            else:
+                raise RuntimeError(f"Unexpected attention_mask ndim={attn.dim()}")
+
+            inps[idx, :max_len, :] = hidden_states
+            attention_masks[idx, 0, :max_len, :max_len] = attn
+
+            pe0, pe1 = kwargs.get("position_embeddings", None)
+            if idx == 0:
+                cache["position_embeddings_0"][0, :max_len, :] = pe0
+                cache["position_embeddings_1"][0, :max_len, :] = pe1
+
             cache["i"] += 1
             raise ValueError  # early stop
 
     # Hook the first layer
-    layers[0] = Catcher(layers[0]).to(dev)
+    layers[0] = Catcher(layers[0])
     for batch in dataloader:
         try:
             inp_ids = batch[0].to(dev)
@@ -75,11 +92,13 @@ def prepare_calibration(model, dataloader, max_len, dev):
     layers[0] = layers[0].module
 
     outs = torch.zeros_like(inps)
+    outs.requires_grad = False
     calib_data = {
         "inps": inps,
         "attention_masks": attention_masks,
-        "position_ids": cache['position_ids'],
-        "outs": outs
+        "position_embeddings_0": cache["position_embeddings_0"],
+        "position_embeddings_1": cache["position_embeddings_1"],
+        "outs": outs,
     }
     model.config.use_cache = use_cache
 
