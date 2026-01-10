@@ -44,6 +44,11 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
     for i, layer in enumerate(tqdm(layers, desc="Processing layers")):
         subset = find_layers(layer)
 
+        if f"model.layers.{i}" in model.hf_device_map:  ## handle the case for when the device map has multiple GPUs;
+            dev = model.hf_device_map[f"model.layers.{i}"]
+            inps, outs, attention_masks, position_ids = inps.to(dev), outs.to(dev), attention_masks.to(
+                dev), position_ids.to(dev)
+
         # For each sub-layer, wrap it so we can track input norms
         wrapped_layers = {}
         for name in subset:
@@ -106,9 +111,9 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
                 )[0]
 
         # swap
-        layers[i] = layer
+        # layers[i] = layer.cpu()
         inps, outs = outs, inps
-        torch.cuda.empty_cache()
+        # torch.cuda.empty_cache()
 
     model.config.use_cache = use_cache
     torch.cuda.empty_cache()

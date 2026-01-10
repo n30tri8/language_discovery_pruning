@@ -12,21 +12,22 @@ def llama_sparsellm(model, dataloader, max_cal_len, dev, sparsity) -> None:
     """
     print("Starting Wanda-based pruning...")
 
-    use_cache = model.config.use_cache
-
     with torch.no_grad():
         calib_data = prepare_calibration(model, dataloader, max_cal_len, dev)
 
     prune_wanda(model, calib_data, sparsity, device=dev)
 
-    model.config.use_cache = use_cache
-
     print("Wanda-based pruning done!")
 
 
 def prepare_calibration(model, dataloader, max_len, dev):
+    use_cache = model.config.use_cache
     model.config.use_cache = False
     layers = model.model.layers
+
+    if "model.embed_tokens" in model.hf_device_map:
+        dev = model.hf_device_map["model.embed_tokens"]
+
     # We'll gather the hidden input states (inps) for each calibration sample,
     # plus the attention_mask and position_ids (mirroring old logic).
     dtype = next(iter(model.parameters())).dtype
@@ -66,13 +67,12 @@ def prepare_calibration(model, dataloader, max_len, dev):
     layers[0] = Catcher(layers[0]).to(dev)
     for batch in dataloader:
         try:
-            inp_ids = batch[0]
-            _ = model(inp_ids, attention_mask=batch[1], use_cache=False)
+            inp_ids = batch[0].to(dev)
+            _ = model(inp_ids, attention_mask=batch[1].to(dev), use_cache=False)
         except ValueError:
             pass
     # Restore the actual layer
     layers[0] = layers[0].module
-    torch.cuda.empty_cache()
 
     outs = torch.zeros_like(inps)
     calib_data = {
@@ -81,5 +81,6 @@ def prepare_calibration(model, dataloader, max_len, dev):
         "position_ids": cache['position_ids'],
         "outs": outs
     }
+    model.config.use_cache = use_cache
 
     return calib_data
