@@ -69,8 +69,8 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
             handles.append(h)
 
         # forward pass all calibration samples
-        for j in range(nsamples):
-            with torch.no_grad():
+        with torch.no_grad():
+            for j in range(nsamples):
                 outs[j] = layer(
                     inps[j].unsqueeze(0),
                     attention_mask=attention_masks[j],
@@ -102,8 +102,8 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
             subset[name].weight.data[W_mask] = 0  ## set weights to zero
 
         # forward pass again so next layer sees the pruned representation
-        for j in range(nsamples):
-            with torch.no_grad():
+        with torch.no_grad():
+            for j in range(nsamples):
                 outs[j] = layer(
                     inps[j].unsqueeze(0),
                     attention_mask=attention_masks[j],
