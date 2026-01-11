@@ -84,11 +84,10 @@ def prepare_calibration(model, dataloader, max_len, dev):
     layers[0] = Catcher(layers[0])
     for batch in dataloader:
         try:
-            inp_ids = batch[0].to(dev)
-            attn = batch[1].to(dev)
-            _ = model(inp_ids, attention_mask=attn, use_cache=False)
+            _ = model(batch[0].to(model.dev), attention_mask=batch[1].to(model.dev), use_cache=False)
         except ValueError:
             pass
+    torch.cuda.empty_cache()
     # Restore the actual layer
     layers[0] = layers[0].module
 

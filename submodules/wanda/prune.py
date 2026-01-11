@@ -116,7 +116,7 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
 
         # swap
         inps, outs = outs, inps
-        # torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
 
     inps, outs, attention_masks, position_embeddings_0, position_embeddings_1 = (inps.cpu(), outs.cpu(),
                                                                                  attention_masks.cpu(),
