@@ -26,21 +26,24 @@ def llama_sparsellm(model, dataloader, max_cal_len, dev, sparsity) -> None:
     # torch.cuda.memory._record_memory_history()
     # torch.cuda.memory._dump_snapshot("gpu_snapshot.pickle")
 
-    from torch.profiler import profile, record_function, ProfilerActivity
-    with profile(
-            activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-            record_shapes=True,
-            profile_memory=True
-    ) as prof:
-        with record_function("prune_wanda"):
-            try:
-                prune_wanda(model, calib_data, sparsity, device=dev)
-            except torch.AcceleratorError as e:
-                print(e)
-            finally:
-                print("saving log before exiting.")
-                prof.export_chrome_trace("trace.json")
-                exit(-1)
+    # from torch.profiler import profile, record_function, ProfilerActivity
+    # with profile(
+    #         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+    #         record_shapes=True,
+    #         profile_memory=True
+    # ) as prof:
+    #     with record_function("prune_wanda"):
+    #         try:
+    #             prune_wanda(model, calib_data, sparsity, device=dev)
+    #         except torch.AcceleratorError as e:
+    #             print(e)
+    #         finally:
+    #             print("saving log before exiting.")
+    #             prof.export_chrome_trace("trace.json")
+    #             exit(-1)
+
+    with torch.autograd.detect_anomaly():
+        prune_wanda(model, calib_data, sparsity, device=dev)
 
     print("Wanda-based pruning done!")
 
