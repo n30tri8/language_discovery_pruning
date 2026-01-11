@@ -87,79 +87,10 @@ def _load_benchmark_data(benchmark_data_dir, subject, lang):
     return data_entries
 
 
-def get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=32, test_num=5):
-    """
-    Prepare the MMLU calibration data (trainloader) and test data (list of leftover records).
-
-    1) Loads language file from benchmark_data folder.
-    2) Splits into 'train_num' for calibration vs. remainder for test.
-    3) Builds a "calibration prompt" for each train record, then tokenizes & pads to the max length across them.
-       The returned 'trainloader' is a list of (inp, tar) pairs, each shaped [1, seq_len].
-       - We do *not* fix a seqlen; we let them pad to the longest sample.
-    4) The test set is limited to `test_num` samples (default 5). For each test record, we keep it raw (a dict).
-       We'll handle prompting in the evaluation code.
-
-    Returns:
-      trainloader: list of (inp, tar) pairs ready for unstructured pruning with e.g. llama_sparsellm
-      test_records: list of leftover records (the test data)
-
-    Example usage:
-      trainloader, test_recs = get_tom(tokenizer, "False Belief Task.jsonl", 32, 5)
-    """
+def get_mmlu(benchmark_data_dir, subject, lang, test_num=50):
     records = _load_benchmark_data(benchmark_data_dir, subject, lang)
 
-    # 1) Split
-    train_records = records[:train_num]
-    leftover_records = records[train_num:]
-
-    # 2) Build calibration prompts
-
-    train_prompts = [_build_calibration_prompt(r, tokenizer, lang) for r in train_records]
-
-    # 3) Tokenize each prompt (variable length)
-    encoded_list = []
-    for txt in train_prompts:
-        enc = tokenizer(txt, return_tensors="pt", add_special_tokens=False)
-        # shape: [1, length]
-        encoded_list.append(enc)
-
-    # Find max length
-    max_len = 0
-    for enc in encoded_list:
-        length = enc["input_ids"].shape[1]
-        if length > max_len:
-            max_len = length
-
-    # 4) Pad each to max_len and build (inp, tar)
-    trainloader = []
-    for enc in encoded_list:
-        length = enc["input_ids"].shape[1]
-        pad_needed = max_len - length
-
-        input_ids = enc["input_ids"]
-        attention_mask = enc["attention_mask"]
-
-        if pad_needed > 0:
-            pad_ids = torch.full(
-                (1, pad_needed), tokenizer.pad_token_id, dtype=torch.long
-            )
-            pad_mask = torch.zeros((1, pad_needed), dtype=torch.long)
-            input_ids = torch.cat([input_ids, pad_ids], dim=1)
-            attention_mask = torch.cat([attention_mask, pad_mask], dim=1)
-
-        # Now create the targets so that we are effectively doing next-token or LM-style supervision.
-        tar = input_ids.clone()
-        # Standard trick: mask everything except the “shifted by 1”
-        tar[:, :-1] = -100
-
-        trainloader.append((input_ids, tar, attention_mask))
-
-    # 5) Limit test set size to test_num (if positive)
-    test_records = leftover_records
-    if test_num is not None and test_num > 0:
-        test_records = test_records[:test_num]
-
-    return trainloader, test_records
+    return records[:test_num]
 
 
 # LINGUISTIC BENCHMARKS
@@ -191,36 +122,12 @@ def _build_prompts(data, sys, user, assistant):
 
 def _tokenize_and_pad(prompts, tokenizer):
     """Tokenize chat prompts and pad to max length like the GLUE loader."""
-    # First tokenize everything without padding
-    encoded = [
-        tokenizer(
-            txt, return_tensors="pt", add_special_tokens=False
-        )
-        for txt in prompts
-    ]
+    encoded = tokenizer(prompts, return_tensors="pt", padding=True, truncation=True, add_special_tokens=False)
+    max_len = encoded["input_ids"].shape[1]
+    # rearrange to fit into old usage pattern, add a batch dimension of size 1
+    rearranged = [(ids.unsqueeze(0), attn.unsqueeze(0)) for ids, attn in zip(encoded["input_ids"], encoded["attention_mask"])]
 
-    # Compute max length
-    max_len = max(enc["input_ids"].shape[1] for enc in encoded)
-
-    # Pad all to max length
-    processed = []
-    for enc in encoded:
-        input_ids = enc["input_ids"]
-        attention_mask = enc["attention_mask"]
-
-        pad_needed = max_len - input_ids.shape[1]
-        if pad_needed > 0:
-            pad_ids = torch.full(
-                (1, pad_needed), tokenizer.pad_token_id, dtype=torch.long
-            )
-            pad_mask = torch.zeros((1, pad_needed), dtype=torch.long)
-
-            input_ids = torch.cat([input_ids, pad_ids], dim=1)
-            attention_mask = torch.cat([attention_mask, pad_mask], dim=1)
-
-        processed.append((input_ids, attention_mask))
-
-    return processed, max_len
+    return rearranged, max_len
 
 
 # ENGLISH
@@ -279,6 +186,8 @@ def get_glue(tokenizer):
             for txt in selected_glue_datasets[task]
         ]
 
+    # todo use _tokenize_and_pad
+    raise NotImplementedError
     all_samples = []
     for task in selected_glue_datasets:
         all_samples.extend(selected_glue_datasets[task])
@@ -525,6 +434,7 @@ def get_arabic_calib(tokenizer, base_dir):
     train_loader, max_cal_len = _tokenize_and_pad(all_prompts, tokenizer)
     return train_loader, max_cal_len
 
+
 # Hindi
 def load_paraphrase_hindi(base_dir, split, sample_size):
     if split == "dev":
@@ -572,7 +482,7 @@ def _load_hindi_tasks_for_calibration(benchmark_base_dir) -> Dict[str, List]:
 
     tasks["paraphrase"] = _build_prompts(
         load_paraphrase_hindi(benchmark_base_dir, sample_size=SELECTED_HINDI_TASKS["paraphrase"]["sample_size"],
-                               split="dev"),
+                              split="dev"),
         SELECTED_HINDI_TASKS["paraphrase"]["system_template"],
         SELECTED_HINDI_TASKS["paraphrase"]["user_template"],
         SELECTED_HINDI_TASKS["paraphrase"]["assistant_template"]
@@ -617,21 +527,9 @@ def get_hindi_calib(tokenizer, base_dir):
 # test cases
 def test_get_mmlu():
     subject, lang = "management", "EN"
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-3B-Instruct", use_fast=False,
-                                              cache_dir="./hf_cache")
-    if tokenizer.pad_token_id is None:
-        tokenizer.pad_token_id = tokenizer.eos_token_id or 0
 
     benchmark_data_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "benchmark_data", "mmlu"))
-    trainloader, test_records = get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=2, test_num=2)
-
-    print("Trainloader samples:")
-    for i, (input_ids, tar, attention_mask) in enumerate(trainloader):
-        print(f"Sample {i}:")
-        print("input_ids:", input_ids)
-        print("tar:", tar)
-        print("attention_mask:", attention_mask)
-        print()
+    test_records = get_mmlu(benchmark_data_dir, subject, lang, test_num=2)
 
     print("Test records samples:")
     for i, record in enumerate(test_records):

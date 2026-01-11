@@ -100,6 +100,6 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
 
 def evaluate_model(model, tokenizer, benchmark_data_dir, subject, lang, test_num):
     """Evaluate a pruned model on a subject*lang ."""
-    _, test_recs = get_mmlu(tokenizer, benchmark_data_dir, subject, lang, train_num=0, test_num=test_num)
+    test_recs = get_mmlu(benchmark_data_dir, subject, lang, test_num=test_num)
     acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, lang, batch_size=20, device=DEVICE)
     return acc

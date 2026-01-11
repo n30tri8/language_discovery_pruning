@@ -40,6 +40,7 @@ def setup_tokenizer(model_name):
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, cache_dir=RAW_MODEL_DIR)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token_id = tokenizer.eos_token_id or 0
+    tokenizer.padding_side = 'left' # for decoder-only models
     return tokenizer
 
 
