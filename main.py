@@ -150,14 +150,14 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
             ])
             fout.flush()
 
+            # no more GPU processing needed for the model, Move model to CPU for possible saving to avoid GPU memory spike during serialization
+            model_to_prune = model_to_prune.cpu()
+            torch.cuda.empty_cache()
             # Save model (only if flag is True)
             if save_pruned_models:
                 save_path = model_dir(
                     run_env['model_dir'], model_name, benchmark, lang, ratio
                 )
-                # Move model to CPU for saving to avoid GPU memory spike during serialization
-                model_to_prune.cpu()
-                torch.cuda.empty_cache()
                 thread = save_pruned_model_async(model_to_prune, save_path)
                 save_threads.append(thread)
                 print(f"Saving pruned model to {save_path} in a thread: {thread}")
