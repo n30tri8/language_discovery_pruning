@@ -70,7 +70,7 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
             ]
             chat_texts = [tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True) for msg in
                           messages]
-            inputs = tokenizer(chat_texts, return_tensors="pt", padding=True, truncation=True)
+            inputs = tokenizer(chat_texts, return_tensors="pt", padding=True, truncation=True).to(model.device)
 
             # Generate outputs
             outputs = model.generate(
@@ -90,6 +90,9 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
                 model_extracted_answer = evaluation_spec.extract_answer(gen_text, task=task)
                 if model_extracted_answer == correct_answers[idx]:
                     correct += 1
+
+            del inputs
+            torch.cuda.empty_cache()
 
         task_accuracy = correct / len(records)
         task_accuracies[task] = task_accuracy

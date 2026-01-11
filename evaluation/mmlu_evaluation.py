@@ -71,7 +71,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
         ]
         chat_texts = [tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True) for msg in
                       messages]
-        inputs = tokenizer(chat_texts, return_tensors="pt", padding=True, truncation=True)
+        inputs = tokenizer(chat_texts, return_tensors="pt", padding=True, truncation=True).to(model.device)
 
         # Generate outputs
         outputs = model.generate(
@@ -91,6 +91,9 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
             mapped_answer = letter_maps[i].get(model_extracted_answer)
             if mapped_answer == correct_answers[i]:
                 correct += 1
+
+        del inputs
+        torch.cuda.empty_cache()
 
     return correct / len(subject_records)
 
