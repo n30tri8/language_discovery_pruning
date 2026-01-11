@@ -91,7 +91,6 @@ def prepare_calibration(model, dataloader, max_len, dev):
     layers[0] = layers[0].module
 
     outs = torch.zeros_like(inps)
-    outs.requires_grad = False
     calib_data = {
         "inps": inps,
         "attention_masks": attention_masks,
