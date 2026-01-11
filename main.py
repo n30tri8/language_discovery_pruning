@@ -311,14 +311,6 @@ if __name__ == "__main__":
     if "raw_eval" in to_run:
         evaluate_raw_model(args.model, args.test_num, run_env, selected_languages)
     if "prune" in to_run:
-        # enable memory history, which will
-        # add tracebacks and event history to snapshots
-        torch.cuda.memory._record_memory_history()
-        try:
-            prune(args.model, args.sparsity_ratios, run_env, selected_languages, save_pruned_models=args.save_pruned)
-        except torch.AcceleratorError as e:
-            print(e)
-        finally:
-            torch.cuda.memory._dump_snapshot("gpu_snapshot.pickle")
+        prune(args.model, args.sparsity_ratios, run_env, selected_languages, save_pruned_models=args.save_pruned)
     if "cross_eval" in to_run:
         cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env, selected_languages)
