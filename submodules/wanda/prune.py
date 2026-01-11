@@ -105,6 +105,10 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
             W_mask.scatter_(1, indices, True)
             subset[name].weight.data[W_mask] = 0  ## set weights to zero
 
+            # Explicitly free memory
+            del W_metric, W_mask, sort_res, indices, row_norms
+            torch.cuda.empty_cache()
+
         # forward pass again so next layer sees the pruned representation
         with torch.no_grad():
             for j in range(nsamples):
