@@ -85,7 +85,8 @@ def prepare_calibration(model, dataloader, max_len, dev):
     for batch in dataloader:
         try:
             inp_ids = batch[0].to(dev)
-            _ = model(inp_ids, attention_mask=batch[1].to(dev), use_cache=False)
+            attn = batch[1].to(dev)
+            _ = model(inp_ids, attention_mask=attn, use_cache=False)
         except ValueError:
             pass
     # Restore the actual layer
