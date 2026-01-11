@@ -46,12 +46,13 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
     for i, layer in enumerate(tqdm(layers, desc="Processing layers")):
         subset = find_layers(layer)
 
-        if f"model.layers.{i}" in model.hf_device_map:  ## handle the case for when the device map has multiple GPUs;
-            dev = model.hf_device_map[f"model.layers.{i}"]
-            inps, outs, attention_masks, position_embeddings_0, position_embeddings_1 = (inps.to(dev), outs.to(dev),
-                                                                                         attention_masks.to(dev),
-                                                                                         position_embeddings_0.to(dev),
-                                                                                         position_embeddings_1.to(dev))
+        # Determine the device for the current layer and move tensors
+        layer_dev = next(layer.parameters()).device
+        inps = inps.to(layer_dev)
+        outs = outs.to(layer_dev)
+        attention_masks = attention_masks.to(layer_dev)
+        position_embeddings_0 = position_embeddings_0.to(layer_dev)
+        position_embeddings_1 = position_embeddings_1.to(layer_dev)
 
         # For each sub-layer, wrap it so we can track input norms
         wrapped_layers = {}
