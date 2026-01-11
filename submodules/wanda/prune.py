@@ -53,6 +53,7 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
         attention_masks = attention_masks.to(layer_dev)
         position_embeddings_0 = position_embeddings_0.to(layer_dev)
         position_embeddings_1 = position_embeddings_1.to(layer_dev)
+        torch.cuda.empty_cache()
 
         # For each sub-layer, wrap it so we can track input norms
         wrapped_layers = {}
@@ -94,9 +95,6 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
         ):
             # Weighted metric = abs(W) * sqrt( row-norm of input )
             W = subset[name].weight.data
-
-            # Move scaler_row to the correct device before use
-            wrapped_layers[name].scaler_row = wrapped_layers[name].scaler_row.to(W.device)
             row_norms = torch.sqrt(wrapped_layers[name].scaler_row).reshape(1, -1)
             W_metric = torch.abs(W) * row_norms
 
