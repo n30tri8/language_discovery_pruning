@@ -44,6 +44,10 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
 
     layers = model.model.layers
     for i, layer in enumerate(tqdm(layers, desc="Processing layers")):
+        if i == 11:
+            # add tracebacks and event history to snapshots
+            torch.cuda.memory._record_memory_history()
+
         subset = find_layers(layer)
 
         # Determine the device for the current layer and move tensors

@@ -16,8 +16,6 @@ def llama_sparsellm(model, dataloader, max_cal_len, dev, sparsity) -> None:
         calib_data = prepare_calibration(model, dataloader, max_cal_len, dev)
 
     # enable memory history, which will
-    # add tracebacks and event history to snapshots
-    torch.cuda.memory._record_memory_history(enabled='state', context='all', stacks='python')
     try:
         prune_wanda(model, calib_data, sparsity, device=dev)
     except torch.AcceleratorError as e:
