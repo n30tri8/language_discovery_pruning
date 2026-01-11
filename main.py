@@ -90,7 +90,7 @@ def evaluate_raw_model(model_name, test_num, run_env, selected_languages):
     print(f"\nRaw model evaluation done. Results saved to '{logs_file}'.")
 
 
-def prune(model_name, sparsity_ratios, run_env, selected_languages):
+def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_models=True):
     save_threads = []
 
     tokenizer = setup_tokenizer(model_name)
@@ -150,21 +150,23 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages):
             ])
             fout.flush()
 
-            # Save model
-            save_path = model_dir(
-                run_env['model_dir'], model_name, benchmark, lang, ratio
-            )
-            # Move model to CPU for saving to avoid GPU memory spike during serialization
-            model_to_prune.cpu()
-            torch.cuda.empty_cache()
-            thread = save_pruned_model_async(model_to_prune, save_path)
-            save_threads.append(thread)
-            print(f"Saving pruned model to {save_path} in a thread: {thread}")
+            # Save model (only if flag is True)
+            if save_pruned_models:
+                save_path = model_dir(
+                    run_env['model_dir'], model_name, benchmark, lang, ratio
+                )
+                # Move model to CPU for saving to avoid GPU memory spike during serialization
+                model_to_prune.cpu()
+                torch.cuda.empty_cache()
+                thread = save_pruned_model_async(model_to_prune, save_path)
+                save_threads.append(thread)
+                print(f"Saving pruned model to {save_path} in a thread: {thread}")
 
     fout.close()
 
-    for thread in save_threads:
-        thread.join()
+    if save_pruned_models:
+        for thread in save_threads:
+            thread.join()
 
 
 def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, selected_languages):
@@ -289,6 +291,12 @@ if __name__ == "__main__":
         default=AVAILABLE_LANG_CODES,
         help=f"Subset of language codes to process (default: {', '.join(AVAILABLE_LANG_CODES)}).",
     )
+    parser.add_argument(
+        "--save_pruned",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Whether to save pruned models after pruning (default: True)."
+    )
     args = parser.parse_args()
     to_run = set(args.run)
 
@@ -303,6 +311,6 @@ if __name__ == "__main__":
     if "raw_eval" in to_run:
         evaluate_raw_model(args.model, args.test_num, run_env, selected_languages)
     if "prune" in to_run:
-        prune(args.model, args.sparsity_ratios, run_env, selected_languages)
+        prune(args.model, args.sparsity_ratios, run_env, selected_languages, save_pruned_models=args.save_pruned)
     if "cross_eval" in to_run:
         cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env, selected_languages)
