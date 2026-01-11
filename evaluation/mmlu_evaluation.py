@@ -31,7 +31,7 @@ def format_system_prompt(subject, lang):
     return system_msg
 
 
-def format_user_prompt(record, lang, shuffle_choices=True):
+def format_user_prompt(record, lang, shuffle_choices=False):
     user_msg, letter_map = _build_user_message(record, lang, shuffle=shuffle_choices)
     return user_msg, letter_map
 
@@ -59,7 +59,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
 
         # Preprocess batch
         for rec in batch:
-            user_msg, letter_map = format_user_prompt(rec, lang, shuffle_choices=True)
+            user_msg, letter_map = format_user_prompt(rec, lang, shuffle_choices=False)
             user_msgs.append(user_msg)
             letter_maps.append(letter_map)
             correct_answers.append(rec.get("answer"))
