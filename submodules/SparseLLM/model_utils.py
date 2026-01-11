@@ -18,18 +18,29 @@ def llama_sparsellm(model, dataloader, max_cal_len, dev, sparsity) -> None:
     # Check if dataloader or its members are on CUDA
     for batch in dataloader:
         for tensor in batch:
-            if isinstance(tensor, torch.Tensor) and tensor.is_cuda:
+            if tensor.is_cuda:
                 print("Found tensor on CUDA/GPU memory in dataloader.")
 
-    # enable memory history, which will
-    # add tracebacks and event history to snapshots
-    torch.cuda.memory._record_memory_history()
-    try:
-        prune_wanda(model, calib_data, sparsity, device=dev)
-    except torch.AcceleratorError as e:
-        print(e)
-    finally:
-        torch.cuda.memory._dump_snapshot("gpu_snapshot.pickle")
+    # # enable memory history, which will
+    # # add tracebacks and event history to snapshots
+    # torch.cuda.memory._record_memory_history()
+    # torch.cuda.memory._dump_snapshot("gpu_snapshot.pickle")
+
+    from torch.profiler import profile, record_function, ProfilerActivity
+    with profile(
+            activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+            record_shapes=True,
+            profile_memory=True
+    ) as prof:
+        with record_function("prune_wanda"):
+            try:
+                prune_wanda(model, calib_data, sparsity, device=dev)
+            except torch.AcceleratorError as e:
+                print(e)
+            finally:
+                print("saving log before exiting.")
+                prof.export_chrome_trace("trace.json")
+                exit(-1)
 
     print("Wanda-based pruning done!")
 
@@ -101,7 +112,6 @@ def prepare_calibration(model, dataloader, max_len, dev):
             _ = model(batch[0].to(dev), attention_mask=batch[1].to(dev), use_cache=False)
         except ValueError:
             pass
-    del batch
     torch.cuda.empty_cache()
     # Restore the actual layer
     layers[0] = layers[0].module
