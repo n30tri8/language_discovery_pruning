@@ -92,6 +92,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
             if mapped_answer == correct_answers[i]:
                 correct += 1
 
+    del inputs, outputs, out, gen_part
     torch.cuda.empty_cache()
 
     return correct / len(subject_records)

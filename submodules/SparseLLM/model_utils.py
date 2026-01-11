@@ -87,6 +87,7 @@ def prepare_calibration(model, dataloader, max_len, dev):
             _ = model(batch[0].to(dev), attention_mask=batch[1].to(dev), use_cache=False)
         except ValueError:
             pass
+    del batch
     torch.cuda.empty_cache()
     # Restore the actual layer
     layers[0] = layers[0].module

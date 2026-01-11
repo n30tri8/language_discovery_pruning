@@ -91,6 +91,7 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
                 if model_extracted_answer == correct_answers[idx]:
                     correct += 1
 
+        del inputs, outputs, out, gen_part
         torch.cuda.empty_cache()
 
         task_accuracy = correct / len(records)
