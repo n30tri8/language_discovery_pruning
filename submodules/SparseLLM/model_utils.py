@@ -15,7 +15,21 @@ def llama_sparsellm(model, dataloader, max_cal_len, dev, sparsity) -> None:
     with torch.no_grad():
         calib_data = prepare_calibration(model, dataloader, max_cal_len, dev)
 
-    prune_wanda(model, calib_data, sparsity, device=dev)
+    # Check if dataloader or its members are on CUDA
+    for batch in dataloader:
+        for tensor in batch:
+            if isinstance(tensor, torch.Tensor) and tensor.is_cuda:
+                print("Found tensor on CUDA/GPU memory in dataloader.")
+
+    # enable memory history, which will
+    # add tracebacks and event history to snapshots
+    torch.cuda.memory._record_memory_history()
+    try:
+        prune_wanda(model, calib_data, sparsity, device=dev)
+    except torch.AcceleratorError as e:
+        print(e)
+    finally:
+        torch.cuda.memory._dump_snapshot("gpu_snapshot.pickle")
 
     print("Wanda-based pruning done!")
 
