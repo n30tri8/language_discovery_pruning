@@ -38,11 +38,10 @@ def setup_environment(seed, raw_model_dir):
 def setup_tokenizer(model_name):
     """Initialize and configure tokenizer."""
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, cache_dir=RAW_MODEL_DIR,
-                                              # padding_side='left'  # for decoder-only models
+                                              padding_side='left'  # for decoder-only models
                                               )
-    if tokenizer.pad_token_id is None:
-        tokenizer.pad_token_id = tokenizer.eos_token_id or 0
-        # tokenizer.pad_token = tokenizer.eos_token
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
 
     return tokenizer
 
