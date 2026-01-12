@@ -35,8 +35,8 @@ def prepare_calibration(model, dataloader, max_len, dev):
     inps = torch.zeros((nsamples, max_len, model.config.hidden_size), dtype=dtype)
     inps.requires_grad = False
     attention_masks = torch.zeros((nsamples, 1, max_len, max_len), dtype=torch.bool)
-    position_embeddings_0 = torch.zeros((1, max_len, model.config.head_dim), dtype=torch.float16)
-    position_embeddings_1 = torch.zeros((1, max_len, model.config.head_dim), dtype=torch.float16)
+    position_embeddings_0 = torch.zeros((1, max_len, model.config.head_dim), dtype=torch.float16, device="cpu")
+    position_embeddings_1 = torch.zeros((1, max_len, model.config.head_dim), dtype=torch.float16, device="cpu")
     position_embeddings_0.requires_grad = False
     position_embeddings_1.requires_grad = False
     cache = {'i': 0, 'position_embeddings_0': position_embeddings_0, 'position_embeddings_1': position_embeddings_1}
@@ -74,8 +74,8 @@ def prepare_calibration(model, dataloader, max_len, dev):
 
             pe0, pe1 = kwargs.get("position_embeddings", None)
             if idx == 0:
-                cache["position_embeddings_0"][0, :max_len, :] = pe0
-                cache["position_embeddings_1"][0, :max_len, :] = pe1
+                cache["position_embeddings_0"][0, :max_len, :] = pe0.cpu()
+                cache["position_embeddings_1"][0, :max_len, :] = pe1.cpu()
 
             cache["i"] += 1
             raise ValueError  # early stop
@@ -90,14 +90,17 @@ def prepare_calibration(model, dataloader, max_len, dev):
     # Restore the actual layer
     layers[0] = layers[0].module
 
-    outs = torch.zeros_like(inps)
+    # keeping tensor in cpu for gpu memory optimization
+    inps = inps.cpu()
+    attention_masks = attention_masks.cpu()
+    outs = torch.zeros_like(inps, device="cpu")
     outs.requires_grad = False
     calib_data = {
         "inps": inps,
         "attention_masks": attention_masks,
         "position_embeddings_0": cache["position_embeddings_0"],
         "position_embeddings_1": cache["position_embeddings_1"],
-        "outs": outs,
+        "outs": outs
     }
     model.config.use_cache = use_cache
 
