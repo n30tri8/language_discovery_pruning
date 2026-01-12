@@ -46,15 +46,6 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
     for i, layer in enumerate(tqdm(layers, desc="Processing layers")):
         subset = find_layers(layer)
 
-        # Determine the device for the current layer and move tensors
-        layer_dev = next(layer.parameters()).device
-        inps = inps.to(layer_dev)
-        outs = outs.to(layer_dev)
-        attention_masks = attention_masks.to(layer_dev)
-        position_embeddings_0 = position_embeddings_0.to(layer_dev)
-        position_embeddings_1 = position_embeddings_1.to(layer_dev)
-        torch.cuda.empty_cache()
-
         # For each sub-layer, wrap it so we can track input norms
         wrapped_layers = {}
         for name in subset:
@@ -74,6 +65,14 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
             h = subset[name].register_forward_hook(make_hook(name))
             handles.append(h)
 
+        # Determine the device for the current layer and move tensors
+        layer_dev = next(layer.parameters()).device
+        inps = inps.to(layer_dev)
+        outs = outs.to(layer_dev)
+        attention_masks = attention_masks.to(layer_dev)
+        position_embeddings_0 = position_embeddings_0.to(layer_dev)
+        position_embeddings_1 = position_embeddings_1.to(layer_dev)
+        torch.cuda.empty_cache()
         # forward pass all calibration samples
         with torch.no_grad():
             for j in range(nsamples):
@@ -82,6 +81,10 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
                     attention_mask=attention_masks[j].unsqueeze(0),
                     position_embeddings=(position_embeddings_0, position_embeddings_1)
                 )[0]
+        # move large tensors out of GPU
+        inps = inps.cpu()
+        outs = outs.cpu()
+        torch.cuda.empty_cache()
 
         # remove hooks
         for h in handles:
@@ -106,11 +109,13 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
             indices = sort_res[1][:, :k]
             W_mask.scatter_(1, indices, True)
             subset[name].weight.data[W_mask] = 0  ## set weights to zero
+        # Explicitly free memory
+        del W_metric, W_mask, sort_res, indices, row_norms
+        torch.cuda.empty_cache()
 
-            # Explicitly free memory
-            del W_metric, W_mask, sort_res, indices, row_norms
-            torch.cuda.empty_cache()
-
+        # move large tensors back to GPU
+        inps = inps.to(layer_dev)
+        outs = outs.to(layer_dev)
         # forward pass again so next layer sees the pruned representation
         with torch.no_grad():
             for j in range(nsamples):
