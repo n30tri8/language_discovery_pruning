@@ -251,9 +251,6 @@ if __name__ == "__main__":
     elif runtime_env_arg == 'google_cloud':
         run_env['root_storage_dir'] = "/gcs/language-discovery-pruning/"
         run_env['model_dir'] = os.path.join(run_env['root_storage_dir'], ".cache/huggingface/hub")
-    print(project_dir)
-    print(run_env['root_storage_dir'])
-    exit(0)
     run_env['raw_model_dir'] = os.path.join(project_dir, "raw_model")
     run_env['benchmark_data_dir'] = os.path.join(project_dir, "benchmark_data", "mmlu")
     run_env['results_dir'] = os.path.join(run_env['root_storage_dir'], "logs")
