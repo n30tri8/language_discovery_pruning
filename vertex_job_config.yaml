@@ -1,7 +1,7 @@
 # config.yaml
 workerPoolSpecs:
   machineSpec:
-    machineType: n1-highmem-8
+    machineType: n1-standard-16
 #    acceleratorType: NVIDIA_TESLA_T4
 #    acceleratorCount: 2
   replicaCount: 1
@@ -9,7 +9,9 @@ workerPoolSpecs:
     imageUri: us-west1-docker.pkg.dev/sonorous-treat-476419-s8/main-docker/pruning
     env:
     - name: HF_TOKEN
-      value: "hf_..."
+      value: <hf_...>
+    - name: RUN_ENV
+      value: google_cloud
 #    command: ["python", "your_script.py"] # Optional: Override container's ENTRYPOINT
 #    args: ["--arg1", "value1"] # Optional: Override container's CMD
 
