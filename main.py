@@ -16,8 +16,8 @@ from submodules.SparseLLM.model_utils import llama_sparsellm
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model_async, \
     load_pruned_model, model_dir, DEVICE
 
-SUBJECTS = ["philosophy", "professional_law", "high_school_mathematics", "professional_psychology",
-            "professional_medicine", "moral_disputes", "sociology", "marketing"]
+SUBJECTS = ["philosophy", "international_law", "high_school_mathematics", "professional_psychology",
+            "professional_medicine", "sociology", "marketing", "high_school_chemistry", "clinical_knowledge"]
 
 LINGUISTIC_BENCHMARKS = {
     # "EN GLUE": {
