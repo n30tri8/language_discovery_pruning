@@ -31,22 +31,11 @@ def prepare_calibration(model, dataloader, max_len):
 
     count_samples = len(dataloader)
     inps = [None] * count_samples
+    attention_masks = [None] * count_samples
     outs = [None] * count_samples
     position_embeddings_0 = [None] * count_samples
     position_embeddings_1 = [None] * count_samples
     cache = {'i': 0}
-
-    # # We'll gather the hidden input states (inps) for each calibration sample,
-    # # plus the attention_mask and position_ids (mirroring old logic).
-    # dtype = next(iter(model.parameters())).dtype
-    # inps = torch.zeros((count_samples, max_len, model.config.hidden_size), dtype=dtype)
-    # inps.requires_grad = False
-    # attention_masks = torch.zeros((count_samples, 1, max_len, max_len), dtype=torch.bool)
-    # position_embeddings_0 = torch.zeros((1, max_len, model.config.head_dim), dtype=torch.float16, device="cpu")
-    # position_embeddings_1 = torch.zeros((1, max_len, model.config.head_dim), dtype=torch.float16, device="cpu")
-    # position_embeddings_0.requires_grad = False
-    # position_embeddings_1.requires_grad = False
-    # cache = {'i': 0, 'position_embeddings_0': position_embeddings_0, 'position_embeddings_1': position_embeddings_1}
 
     # We'll use a forward hook on the first layer to capture the hidden states
     class Catcher(nn.Module):
@@ -70,6 +59,17 @@ def prepare_calibration(model, dataloader, max_len):
             inps[idx] = hidden_states[0].cpu()
             inps[idx].requires_grad = False
 
+            attn = kwargs.get("attention_mask")
+            if attn is None:  # no padding, therefore we create a symmetric square for attending to full sequence
+                token_mask = torch.ones(max_len, dtype=torch.bool)
+                attn = token_mask[:max_len].unsqueeze(1) & token_mask[:max_len].unsqueeze(0)
+                attn = attn.unsqueeze(0)
+            elif attn.dim() == 4:
+                attn = attn[0]
+            else:
+                raise RuntimeError(f"Unexpected attention_mask ndim={attn.dim()}")
+            attention_masks[idx] = attn.cpu()
+
             pe0, pe1 = kwargs.get("position_embeddings", None)
             position_embeddings_0[idx] = pe0.cpu()
             position_embeddings_1[idx] = pe1.cpu()
@@ -89,6 +89,7 @@ def prepare_calibration(model, dataloader, max_len):
 
     calib_data = {
         "inps": inps,
+        "attention_masks": attention_masks,
         "position_embeddings_0": position_embeddings_0,
         "position_embeddings_1": position_embeddings_1,
         "outs": outs

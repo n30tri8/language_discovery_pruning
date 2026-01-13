@@ -37,6 +37,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
 
     inps = calib_data["inps"]
     outs = calib_data["outs"]
+    attention_masks = calib_data["attention_masks"]
     position_embeddings_0 = calib_data["position_embeddings_0"]
     position_embeddings_1 = calib_data["position_embeddings_1"]
     count_samples = len(inps)
@@ -64,13 +65,13 @@ def prune_wanda(model, calib_data, sparsity_ratio):
             h = subset[name].register_forward_hook(make_hook(name))
             handles.append(h)
 
-        # Determine the device for the current layer and move tensors
         layer_dev = next(layer.parameters()).device
         # forward pass all calibration samples
         with torch.no_grad():
             for j in range(count_samples):
                 outs[j] = layer(
                     inps[j].unsqueeze(0).to(layer_dev),
+                    attention_mask=attention_masks[j].unsqueeze(0).to(layer_dev),
                     position_embeddings=(position_embeddings_0[j].to(layer_dev), position_embeddings_1[j].to(layer_dev))
                 )[0]
         torch.cuda.empty_cache()
@@ -107,6 +108,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
             for j in range(count_samples):
                 outs[j] = layer(
                     inps[j].unsqueeze(0).to(layer_dev),
+                    attention_mask=attention_masks[j].unsqueeze(0).to(layer_dev),
                     position_embeddings=(position_embeddings_0[j].to(layer_dev), position_embeddings_1[j].to(layer_dev))
                 )[0]
 
@@ -114,6 +116,6 @@ def prune_wanda(model, calib_data, sparsity_ratio):
         inps, outs = outs, inps
         torch.cuda.empty_cache()
 
-    del inps, outs, position_embeddings_0, position_embeddings_1
+    del inps, outs, attention_masks, position_embeddings_0, position_embeddings_1
     model.config.use_cache = use_cache
     torch.cuda.empty_cache()
