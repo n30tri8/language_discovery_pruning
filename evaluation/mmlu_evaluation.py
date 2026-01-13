@@ -37,7 +37,7 @@ def format_user_prompt(record, lang, shuffle_choices=False):
 
 
 @torch.inference_mode()
-def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, batch_size, device=DEVICE):
+def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, batch_size):
     """
     Evaluate a *finetuned or pruned* model on a list of leftover test records.
     """
@@ -54,7 +54,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
     # Pre-cache the system prompt as they are the same for all records
     system_msg = format_system_prompt(subject, lang)
 
-    for batch in tqdm(batches, desc=f"Evaluating on {subject}", unit="batch"):
+    for batch in tqdm(batches, desc=f"Evaluating on subject:{subject}, lang:{lang}", unit="batch"):
         user_msgs, letter_maps, correct_answers = [], [], []
 
         # Preprocess batch
@@ -101,5 +101,5 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
 def evaluate_model(model, tokenizer, benchmark_data_dir, subject, lang, test_num):
     """Evaluate a pruned model on a subject*lang ."""
     test_recs = get_mmlu(benchmark_data_dir, subject, lang, test_num=test_num)
-    acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, lang, batch_size=20, device=DEVICE)
+    acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, lang, batch_size=100)
     return acc
