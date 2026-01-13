@@ -127,16 +127,13 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
         print(f"\n=== Pruning on linguistic benchmark '{benchmark}' ===")
         # Prepare data
         benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
-        benchmark_data, max_cal_len = benchmark_loader(tokenizer)
+        benchmark_data, _ = benchmark_loader(tokenizer)
 
         for ratio in sparsity_ratios:
             model_to_prune = load_raw_model(model_name)
-            model_to_prune.seqlen = max_cal_len
 
             # Prune and evaluate
-            llama_sparsellm(
-                model_to_prune, benchmark_data, max_cal_len, torch.device(DEVICE), ratio / 100.0
-            )
+            llama_sparsellm(model_to_prune, benchmark_data, -1, ratio / 100.0)
 
             linguistic_eval = evaluate_on_linguistic(model_to_prune, tokenizer, evaluation_spec)
 

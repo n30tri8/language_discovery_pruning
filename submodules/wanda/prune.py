@@ -27,7 +27,7 @@ def find_layers(module, layers=[nn.Linear], name=''):
     return res
 
 
-def prune_wanda(model, calib_data, sparsity_ratio, device):
+def prune_wanda(model, calib_data, sparsity_ratio):
     """
     Modified Wanda function that uses already-collected calibration data
     (inps, attention_masks, position_embeddings) rather than reloading from dataset.
@@ -37,10 +37,9 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
 
     inps = calib_data["inps"]
     outs = calib_data["outs"]
-    attention_masks = calib_data["attention_masks"]
     position_embeddings_0 = calib_data["position_embeddings_0"]
     position_embeddings_1 = calib_data["position_embeddings_1"]
-    nsamples = inps.shape[0]
+    count_samples = len(inps)
 
     layers = model.model.layers
     for i, layer in enumerate(tqdm(layers, desc="Processing layers")):
@@ -67,23 +66,13 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
 
         # Determine the device for the current layer and move tensors
         layer_dev = next(layer.parameters()).device
-        inps = inps.to(layer_dev)
-        outs = outs.to(layer_dev)
-        attention_masks = attention_masks.to(layer_dev)
-        position_embeddings_0 = position_embeddings_0.to(layer_dev)
-        position_embeddings_1 = position_embeddings_1.to(layer_dev)
-        torch.cuda.empty_cache()
         # forward pass all calibration samples
         with torch.no_grad():
-            for j in range(nsamples):
+            for j in range(count_samples):
                 outs[j] = layer(
-                    inps[j].unsqueeze(0),
-                    attention_mask=attention_masks[j].unsqueeze(0),
-                    position_embeddings=(position_embeddings_0, position_embeddings_1)
+                    inps[j].unsqueeze(0).to(layer_dev),
+                    position_embeddings=(position_embeddings_0[j].to(layer_dev), position_embeddings_1[j].to(layer_dev))
                 )[0]
-        # move large tensors out of GPU
-        inps = inps.cpu()
-        outs = outs.cpu()
         torch.cuda.empty_cache()
 
         # remove hooks
@@ -113,22 +102,18 @@ def prune_wanda(model, calib_data, sparsity_ratio, device):
         del W_metric, W_mask, sort_res, indices, row_norms
         torch.cuda.empty_cache()
 
-        # move large tensors back to GPU
-        inps = inps.to(layer_dev)
-        outs = outs.to(layer_dev)
         # forward pass again so next layer sees the pruned representation
         with torch.no_grad():
-            for j in range(nsamples):
+            for j in range(count_samples):
                 outs[j] = layer(
-                    inps[j].unsqueeze(0),
-                    attention_mask=attention_masks[j].unsqueeze(0),
-                    position_embeddings=(position_embeddings_0, position_embeddings_1)
+                    inps[j].unsqueeze(0).to(layer_dev),
+                    position_embeddings=(position_embeddings_0[j].to(layer_dev), position_embeddings_1[j].to(layer_dev))
                 )[0]
 
         # swap
         inps, outs = outs, inps
-        # torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
 
-    del inps, outs, attention_masks, position_embeddings_0, position_embeddings_1
+    del inps, outs, position_embeddings_0, position_embeddings_1
     model.config.use_cache = use_cache
     torch.cuda.empty_cache()

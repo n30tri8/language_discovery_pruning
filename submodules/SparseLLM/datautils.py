@@ -120,14 +120,23 @@ def _build_prompts(data, sys, user, assistant):
     return prompts
 
 
-def _tokenize_and_pad(prompts, tokenizer):
-    """Tokenize chat prompts and pad to max length like the GLUE loader."""
-    encoded = tokenizer(prompts, return_tensors="pt", padding=True, truncation=True, add_special_tokens=False)
-    max_len = encoded["input_ids"].shape[1]
-    # rearrange to fit into old usage pattern, add a batch dimension of size 1
-    rearranged = [(ids.unsqueeze(0), attn.unsqueeze(0)) for ids, attn in zip(encoded["input_ids"], encoded["attention_mask"])]
+def _tokenize_and_pad(prompts, tokenizer, pad=False):
+    if pad:
+        encoded = tokenizer(prompts, return_tensors="pt", padding=True, truncation=True, add_special_tokens=False)
+        max_len = encoded["input_ids"].shape[1]
+        # rearrange to fit into old usage pattern, add a batch dimension of size 1
+        rearranged = [(ids.unsqueeze(0), attn.unsqueeze(0)) for ids, attn in
+                      zip(encoded["input_ids"], encoded["attention_mask"])]
+        encoded = rearranged
+    else:
+        encoded = []
+        max_len = -1
+        for txt in prompts:
+            input_ids = tokenizer(txt, return_tensors="pt", truncation=True, add_special_tokens=False)["input_ids"]
+            max_len = max(max_len, input_ids.shape[1])
+            encoded.append(input_ids)
 
-    return rearranged, max_len
+    return encoded, max_len
 
 
 # ENGLISH
@@ -261,7 +270,6 @@ def get_xglue(tokenizer, base_dir, lang):
             for messages in selected[task]
         ]
 
-    # 3) Tokenize + pad
     all_prompts = []
     for task, entries in selected.items():
         all_prompts.extend(entries)
@@ -337,7 +345,6 @@ def get_italian_calib(tokenizer, base_dir):
             for messages in selected[task]
         ]
 
-    # 3) Tokenize + pad
     all_prompts = []
     for task, entries in selected.items():
         all_prompts.extend(entries)
@@ -426,7 +433,6 @@ def get_arabic_calib(tokenizer, base_dir):
             for messages in selected[task]
         ]
 
-    # 3) Tokenize + pad
     all_prompts = []
     for task, entries in selected.items():
         all_prompts.extend(entries)
@@ -515,7 +521,6 @@ def get_hindi_calib(tokenizer, base_dir):
             for messages in selected[task]
         ]
 
-    # 3) Tokenize + pad
     all_prompts = []
     for task, entries in selected.items():
         all_prompts.extend(entries)
