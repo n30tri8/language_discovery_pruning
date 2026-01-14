@@ -54,8 +54,10 @@ def load_raw_model(model_name):
                                                  # float16, float32 for cpu
                                                  device_map="auto"  # for multi gpu support
                                                  )
+    # Ensure deterministic generation
     model.generation_config.do_sample = False
     model.generation_config.top_p = None
+    model.generation_config.temperature = 0.0
     model.eval()
     return model
 
@@ -109,7 +111,9 @@ def load_pruned_model(load_path, device=DEVICE):
     model = AutoModelForCausalLM.from_pretrained(
         load_path, dtype=torch.float16, device_map="auto"
     )
+    # Ensure deterministic generation
     model.generation_config.do_sample = False
     model.generation_config.top_p = None
+    model.generation_config.temperature = 0.0
     model.eval()
     return model, load_path
