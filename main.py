@@ -191,6 +191,8 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
 
     allowed_langs = set(selected_languages)
     for linguistic_pruned in LINGUISTIC_BENCHMARKS:
+        torch.cuda.empty_cache()
+
         lang = LINGUISTIC_BENCHMARKS[linguistic_pruned]['lang']
         if lang not in allowed_langs:
             continue
