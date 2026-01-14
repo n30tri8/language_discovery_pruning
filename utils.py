@@ -57,7 +57,7 @@ def load_raw_model(model_name):
     # Ensure deterministic generation
     model.generation_config.do_sample = False
     model.generation_config.top_p = None
-    model.generation_config.temperature = 0.0
+    model.generation_config.temperature = None
     model.eval()
     return model
 
@@ -114,6 +114,6 @@ def load_pruned_model(load_path, device=DEVICE):
     # Ensure deterministic generation
     model.generation_config.do_sample = False
     model.generation_config.top_p = None
-    model.generation_config.temperature = 0.0
+    model.generation_config.temperature = None
     model.eval()
     return model, load_path
