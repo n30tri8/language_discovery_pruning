@@ -208,9 +208,7 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
                 # Write results to file
                 writer.writerow([model_name, linguistic_pruned, lang, ratio, subject, subtask_acc])
                 fout.flush()
-
-            del pruned_model
-            torch.cuda.empty_cache()
+    # todo gpu memory issue, after first iteration
 
     fout.close()
 
