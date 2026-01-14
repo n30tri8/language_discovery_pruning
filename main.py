@@ -129,12 +129,12 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
         ])
         fout.flush()
 
-        print(f"\n=== Pruning on linguistic benchmark '{benchmark}' ===")
         # Prepare data
         benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
         benchmark_data, _ = benchmark_loader(tokenizer)
 
         for ratio in sparsity_ratios:
+            print(f"\n=== Pruning on linguistic benchmark: '{benchmark}', ratio: {ratio} ===")
             model_to_prune = load_raw_model(model_name)
 
             # Prune and evaluate

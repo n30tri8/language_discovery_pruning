@@ -54,7 +54,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
     # Pre-cache the system prompt as they are the same for all records
     system_msg = format_system_prompt(subject, lang)
 
-    for batch in tqdm(batches, desc=f"Evaluating on subject:{subject}, lang:{lang}", unit="batch"):
+    for batch in tqdm(batches, desc=f"Evaluating on subject: {subject}, lang: {lang}", unit="batch"):
         user_msgs, letter_maps, correct_answers = [], [], []
 
         # Preprocess batch
