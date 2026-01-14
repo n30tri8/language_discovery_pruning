@@ -1,10 +1,9 @@
 import torch
 from tqdm import tqdm
 
-from submodules.SparseLLM.datautils import _build_user_message
-from submodules.SparseLLM.datautils import get_mmlu
-from submodules.SparseLLM.mmlu_prompt_templates import MMMLU_PROMPT
-from utils import DEVICE
+from benchmark_loader.datautils import _build_user_message
+from benchmark_loader.datautils import get_mmlu
+from benchmark_loader.mmlu_prompt_templates import MMMLU_PROMPT
 
 
 def extract_answer(text: str) -> str:

@@ -8,10 +8,10 @@ import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from submodules.SparseLLM.mmlu_prompt_templates import MMMLU_PROMPT
-from submodules.SparseLLM.prompt_templates import SELECTED_GLUE_TASKS
-from submodules.SparseLLM.xglue_loader import load_xnli_test, load_pawsx_test, load_pawsx_italian
-from submodules.SparseLLM.xglue_prompt_templates import SELECTED_XGLUE_TASKS, SELECTED_ITALIAN_TASKS, \
+from benchmark_loader.mmlu_prompt_templates import MMMLU_PROMPT
+from benchmark_loader.prompt_templates import SELECTED_GLUE_TASKS
+from benchmark_loader.xglue_loader import load_xnli_test, load_pawsx_test, load_pawsx_italian
+from benchmark_loader.xglue_prompt_templates import SELECTED_XGLUE_TASKS, SELECTED_ITALIAN_TASKS, \
     SELECTED_ARABIC_TASKS, SELECTED_HINDI_TASKS
 
 
@@ -533,7 +533,7 @@ def get_hindi_calib(tokenizer, base_dir):
 def test_get_mmlu():
     subject, lang = "management", "EN"
 
-    benchmark_data_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "benchmark_data", "mmlu"))
+    benchmark_data_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "../submodules", "..", "benchmark_data", "mmlu"))
     test_records = get_mmlu(benchmark_data_dir, subject, lang, test_num=2)
 
     print("Test records samples:")
@@ -565,7 +565,7 @@ def test_xglue():
         tokenizer.pad_token_id = tokenizer.eos_token_id or 0
 
     base_dir = os.path.normpath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "benchmark_data", "xglue_dataset")
+        os.path.join(os.path.dirname(__file__), "../submodules", "..", "benchmark_data", "xglue_dataset")
     )
     train_loader, max_cal_len = get_xglue(tokenizer, base_dir, lang="de")
 

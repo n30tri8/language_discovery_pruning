@@ -1,6 +1,6 @@
 from evaluation.common_evaluation import EvalSpec
-from submodules.SparseLLM.datautils import _load_glue_data
-from submodules.SparseLLM.prompt_templates import SELECTED_GLUE_TASKS
+from benchmark_loader.datautils import _load_glue_data
+from benchmark_loader.prompt_templates import SELECTED_GLUE_TASKS
 
 
 class GlueEvalSpec(EvalSpec):

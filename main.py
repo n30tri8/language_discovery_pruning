@@ -5,14 +5,14 @@ from functools import partial
 
 import torch
 
+from benchmark_loader.datautils import get_xglue, get_italian_calib, get_arabic_calib, get_hindi_calib
 from evaluation.ar_spec import AREvalSpec
 from evaluation.common_evaluation import evaluate_on_linguistic
 from evaluation.hi_spec import HIEvalSpec
 from evaluation.it_spec import ITEvalSpec
 from evaluation.mmlu_evaluation import evaluate_model
 from evaluation.xglue_spec import XGlueEvalSpec
-from submodules.SparseLLM.datautils import get_xglue, get_italian_calib, get_arabic_calib, get_hindi_calib
-from submodules.SparseLLM.model_utils import llama_sparsellm
+from submodules.wanda.prune import prune_wanda, prepare_calibration
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_pruned_model_async, \
     load_pruned_model, model_dir, DEVICE
 
@@ -137,11 +137,13 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
             print(f"\n=== Pruning on linguistic benchmark: '{benchmark}', ratio: {ratio} ===")
             model_to_prune = load_raw_model(model_name)
 
-            # Prune and evaluate
-            llama_sparsellm(model_to_prune, benchmark_data, -1, ratio / 100.0)
+            # Prune
+            with torch.no_grad():
+                calib_data = prepare_calibration(model_to_prune, benchmark_data)
+                prune_wanda(model_to_prune, calib_data, ratio / 100.0)
+            print("\n=== Wanda-based pruning done  ===")
 
             linguistic_eval = evaluate_on_linguistic(model_to_prune, tokenizer, evaluation_spec)
-
             # Log post-pruning evaluation for this ratio
             writer.writerow([
                 model_name,

@@ -1,7 +1,7 @@
 from evaluation.common_evaluation import EvalSpec
-from submodules.SparseLLM.datautils import load_uinauil_textualentailmen
-from submodules.SparseLLM.xglue_loader import load_pawsx_italian
-from submodules.SparseLLM.xglue_prompt_templates import SELECTED_ITALIAN_TASKS
+from benchmark_loader.datautils import load_uinauil_textualentailmen
+from benchmark_loader.xglue_loader import load_pawsx_italian
+from benchmark_loader.xglue_prompt_templates import SELECTED_ITALIAN_TASKS
 
 
 class ITEvalSpec(EvalSpec):

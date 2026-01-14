@@ -1,6 +1,6 @@
 from evaluation.common_evaluation import EvalSpec
-from submodules.SparseLLM.xglue_loader import load_xnli_test, load_pawsx_test
-from submodules.SparseLLM.xglue_prompt_templates import SELECTED_XGLUE_TASKS
+from benchmark_loader.xglue_loader import load_xnli_test, load_pawsx_test
+from benchmark_loader.xglue_prompt_templates import SELECTED_XGLUE_TASKS
 
 
 class XGlueEvalSpec(EvalSpec):

@@ -1,9 +1,9 @@
 import os
 
 from evaluation.common_evaluation import EvalSpec
-from submodules.SparseLLM.datautils import load_paraphrase_hindi
-from submodules.SparseLLM.xglue_loader import load_xnli_test
-from submodules.SparseLLM.xglue_prompt_templates import SELECTED_HINDI_TASKS
+from benchmark_loader.datautils import load_paraphrase_hindi
+from benchmark_loader.xglue_loader import load_xnli_test
+from benchmark_loader.xglue_prompt_templates import SELECTED_HINDI_TASKS
 
 
 class HIEvalSpec(EvalSpec):
