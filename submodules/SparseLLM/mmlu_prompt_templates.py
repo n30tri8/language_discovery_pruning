@@ -75,6 +75,12 @@ system_prompt_field_translation = {
             "professional_law": "Rechtswissenschaften",
             "high_school_mathematics": "Gymnasialmathematik",
             "professional_psychology": "Berufspsychologie",
+            "international_law": "Internationales Recht",
+            "professional_medicine": "Fachmedizin",
+            "sociology": "Soziologie",
+            "marketing": "Marketing",
+            "high_school_chemistry": "Gymnasialchemie",
+            "clinical_knowledge": "Klinisches Wissen",
         }
     },
     'fr': {
@@ -83,6 +89,12 @@ system_prompt_field_translation = {
             "professional_law": "Droit professionnel",
             "high_school_mathematics": "Mathématiques de lycée",
             "professional_psychology": "Psychologie professionnelle",
+            "international_law": "Droit international",
+            "professional_medicine": "Médecine professionnelle",
+            "sociology": "Sociologie",
+            "marketing": "Marketing",
+            "high_school_chemistry": "Chimie de lycée",
+            "clinical_knowledge": "Connaissances cliniques",
         }
     },
     'it': {
@@ -91,6 +103,12 @@ system_prompt_field_translation = {
             "professional_law": "Diritto professionale",
             "high_school_mathematics": "Matematica per la scuola superiore",
             "professional_psychology": "Psicologia professionale",
+            "international_law": "Diritto internazionale",
+            "professional_medicine": "Medicina professionale",
+            "sociology": "Sociologia",
+            "marketing": "Marketing",
+            "high_school_chemistry": "Chimica per la scuola superiore",
+            "clinical_knowledge": "Conoscenza clinica",
         }
     },
     'ar': {
@@ -99,6 +117,12 @@ system_prompt_field_translation = {
             "professional_law": "القانون المهني",
             "high_school_mathematics": "رياضيات المدرسة الثانوية",
             "professional_psychology": "علم النفس المهني",
+            "international_law": "القانون الدولي",
+            "professional_medicine": "الطب المهني",
+            "sociology": "علم الاجتماع",
+            "marketing": "التسويق",
+            "high_school_chemistry": "كيمياء المدرسة الثانوية",
+            "clinical_knowledge": "المعرفة السريرية",
         }
     },
     'hi': {
@@ -107,6 +131,12 @@ system_prompt_field_translation = {
             "professional_law": "व्यावसायिक कानून",
             "high_school_mathematics": "उच्च विद्यालय गणित",
             "professional_psychology": "व्यावसायिक मनोविज्ञान",
+            "international_law": "अंतर्राष्ट्रीय कानून",
+            "professional_medicine": "व्यावसायिक चिकित्सा",
+            "sociology": "समाजशास्त्र",
+            "marketing": "विपणन",
+            "high_school_chemistry": "उच्च विद्यालय रसायन विज्ञान",
+            "clinical_knowledge": "नैदानिक ज्ञान",
         }
     },
     'ja': {
@@ -115,6 +145,12 @@ system_prompt_field_translation = {
             "professional_law": "専門法学",
             "high_school_mathematics": "高校数学",
             "professional_psychology": "専門心理学",
+            "international_law": "国際法",
+            "professional_medicine": "専門医学",
+            "sociology": "社会学",
+            "marketing": "マーケティング",
+            "high_school_chemistry": "高校化学",
+            "clinical_knowledge": "臨床知識",
         }
     }
 }
