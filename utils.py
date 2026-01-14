@@ -57,6 +57,7 @@ def load_raw_model(model_name):
     # Ensure deterministic generation
     model.generation_config.do_sample = False
     model.generation_config.top_p = None
+    model.generation_config.top_k = None
     model.generation_config.temperature = None
     model.eval()
     return model
@@ -94,8 +95,6 @@ def save_pruned_model_async(model, save_path):
         print(f"[INFO] Saving pruned model to {save_path}...")
         m.save_pretrained(save_path)
         print(f"[INFO] ✅ Model saved: {save_path}")
-        # Cleanup
-        del m
 
     # Launch background thread
     thread = threading.Thread(target=_save, args=(model,), daemon=False)
@@ -114,6 +113,7 @@ def load_pruned_model(load_path, device=DEVICE):
     # Ensure deterministic generation
     model.generation_config.do_sample = False
     model.generation_config.top_p = None
+    model.generation_config.top_k = None
     model.generation_config.temperature = None
     model.eval()
     return model, load_path
