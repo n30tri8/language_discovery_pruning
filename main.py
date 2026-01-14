@@ -13,7 +13,7 @@ from evaluation.mmlu_evaluation import evaluate_model
 from evaluation.xglue_spec import XGlueEvalSpec
 from submodules.SparseLLM.datautils import get_xglue, get_italian_calib, get_arabic_calib, get_hindi_calib
 from submodules.SparseLLM.model_utils import llama_sparsellm
-from utils import setup_environment, setup_tokenizer, load_raw_model, save_results, save_pruned_model_async, \
+from utils import setup_environment, setup_tokenizer, load_raw_model, save_pruned_model_async, \
     load_pruned_model, model_dir, DEVICE
 
 SUBJECTS = ["philosophy", "international_law", "high_school_mathematics", "professional_psychology",
@@ -69,9 +69,14 @@ def _normalize_languages(languages):
 
 
 def evaluate_raw_model(model_name, test_num, run_env, selected_languages):
-    results_rows = []
-
     logs_file = os.path.join(run_env['results_dir'], "raw_model_eval.csv")
+    write_header = not os.path.exists(logs_file)
+    os.makedirs(os.path.dirname(logs_file), exist_ok=True)
+    fout = open(logs_file, "a", newline="", encoding="utf-8")
+    writer = csv.writer(fout)
+    if write_header:
+        writer.writerow(["model", "subject", "lang", "subtask_acc"])
+
     print(f"\n=== Evaluating RAW model: {model_name} ===")
     tokenizer = setup_tokenizer(model_name)
     raw_model = load_raw_model(model_name)
@@ -79,14 +84,14 @@ def evaluate_raw_model(model_name, test_num, run_env, selected_languages):
     for subject in SUBJECTS:
         for lang in languages:
             subtask_acc = evaluate_model(raw_model, tokenizer, run_env['benchmark_data_dir'], subject, lang, test_num)
-            results_rows.append([model_name, subject, lang, f"{subtask_acc:.4f}"])
+            writer.writerow([model_name, subject, lang, f"{subtask_acc:.4f}"])
+            fout.flush()
 
     # Cleanup raw model
     del raw_model
     torch.cuda.empty_cache()
 
-    header = ["model", "subject", "lang", "subtask_acc"]
-    save_results(logs_file, results_rows, SUBJECTS, header=header)
+    fout.close()
     print(f"\nRaw model evaluation done. Results saved to '{logs_file}'.")
 
 
