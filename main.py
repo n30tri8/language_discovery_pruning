@@ -116,9 +116,9 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
             continue
 
         # pre-prune evaluation
-        model_to_prune = load_raw_model(model_name)
+        raw_model = load_raw_model(model_name)
         evaluation_spec = LINGUISTIC_BENCHMARKS[benchmark]['eval_spec']
-        linguistic_eval = evaluate_on_linguistic(model_to_prune, tokenizer, evaluation_spec)
+        linguistic_eval = evaluate_on_linguistic(raw_model, tokenizer, evaluation_spec)
         # Log pre-pruning evaluation (pruned_ratio = 0)
         writer.writerow([
             model_name,
@@ -132,6 +132,9 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
         # Prepare data
         benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
         benchmark_data, _ = benchmark_loader(tokenizer)
+        with torch.no_grad():
+            calib_data = prepare_calibration(raw_model, benchmark_data)
+        del raw_model
 
         for ratio in sparsity_ratios:
             print(f"\n=== Pruning on linguistic benchmark: '{benchmark}', ratio: {ratio} ===")
@@ -139,7 +142,6 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
 
             # Prune
             with torch.no_grad():
-                calib_data = prepare_calibration(model_to_prune, benchmark_data)
                 prune_wanda(model_to_prune, calib_data, ratio / 100.0)
             print("\n=== Wanda-based pruning done  ===")
 
@@ -154,16 +156,18 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
             ])
             fout.flush()
 
+            # copy the model to CPU for possible saving to avoid GPU memory spike during serialization
+            pruned_model_on_cpu = model_to_prune.cpu()
             # Save model (only if flag is True)
             if save_pruned_models:
-                # no more GPU processing needed for the model, copy the model to CPU for possible saving to avoid GPU memory spike during serialization
-                pruned_model_on_cpu = model_to_prune.cpu()
-                save_path = model_dir(
-                    run_env['model_dir'], model_name, benchmark, lang, ratio
-                )
+                # no more GPU processing needed for the model
+                save_path = model_dir(run_env['model_dir'], model_name, benchmark, lang, ratio)
                 thread = save_pruned_model_async(pruned_model_on_cpu, save_path)
                 save_threads.append(thread)
                 print(f"Delegated saving model to thread: {thread}, save path: {save_path}")
+
+            del model_to_prune
+            torch.cuda.empty_cache()
 
     fout.close()
 
