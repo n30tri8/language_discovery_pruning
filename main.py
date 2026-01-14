@@ -203,9 +203,9 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
         for subject in SUBJECTS:
             subtask_acc = evaluate_model(pruned_model, tokenizer, run_env['benchmark_data_dir'], subject, lang,
                                          test_num)
-            print(f"Evaluation results on subject '{subject}' and language '{lang}': {subtask_acc:.4f}")
             # Write results to file
             writer.writerow([model_name, linguistic_pruned, lang, sparsity_ratios[0], subject, subtask_acc])
+            fout.flush()
     fout.close()
 
 
