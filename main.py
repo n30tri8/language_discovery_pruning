@@ -167,10 +167,10 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
                 save_threads.append(thread)
                 print(f"Delegated saving model to thread: {thread}, save path: {save_path}")
 
-        del model_to_prune
-        gc.collect()
-        torch.cuda.empty_cache()
-        # torch.cuda.synchronize()
+            del model_to_prune
+            gc.collect()
+            torch.cuda.empty_cache()
+            # torch.cuda.synchronize()
 
     fout.close()
 
