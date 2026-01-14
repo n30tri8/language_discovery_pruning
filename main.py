@@ -194,18 +194,20 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
         lang = LINGUISTIC_BENCHMARKS[linguistic_pruned]['lang']
         if lang not in allowed_langs:
             continue
-        load_path = model_dir(
-            run_env['model_dir'], model_name, linguistic_pruned, lang, sparsity_ratios[0]
-        )
-        pruned_model, _ = load_pruned_model(load_path, device=DEVICE)
-        print(f"\n=== Loaded pruned model from {load_path} ===")
 
-        for subject in SUBJECTS:
-            subtask_acc = evaluate_model(pruned_model, tokenizer, run_env['benchmark_data_dir'], subject, lang,
-                                         test_num)
-            # Write results to file
-            writer.writerow([model_name, linguistic_pruned, lang, sparsity_ratios[0], subject, subtask_acc])
-            fout.flush()
+        for ratio in sparsity_ratios:
+            load_path = model_dir(
+                run_env['model_dir'], model_name, linguistic_pruned, lang, ratio
+            )
+            pruned_model, _ = load_pruned_model(load_path, device=DEVICE)
+            print(f"\n=== Loaded pruned model from {load_path} ===")
+
+            for subject in SUBJECTS:
+                subtask_acc = evaluate_model(pruned_model, tokenizer, run_env['benchmark_data_dir'], subject, lang,
+                                             test_num)
+                # Write results to file
+                writer.writerow([model_name, linguistic_pruned, lang, ratio, subject, subtask_acc])
+                fout.flush()
     fout.close()
 
 
