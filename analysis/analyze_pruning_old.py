@@ -2,7 +2,7 @@ import os
 
 from transformers import AutoTokenizer
 
-from submodules.SparseLLM.analysis_utils import (
+from analysis.analysis_utils import (
     get_activation_statistics,
     get_attention_heads_statistics,
     get_layerwise_weight_distribution,
