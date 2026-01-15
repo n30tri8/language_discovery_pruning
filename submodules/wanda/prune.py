@@ -181,7 +181,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
             subset[name].weight.data[W_mask.to(subset[name].weight.device)] = 0  ## set weights to zero
 
             # Explicitly free memory
-            del W, scaler_row_cpu, row_norms, W_metric, W_mask, indices
+            del W, scaler_row_cpu, W_metric, W_mask, indices
             torch.cuda.empty_cache()
 
         # forward pass again so next layer sees the pruned representation
