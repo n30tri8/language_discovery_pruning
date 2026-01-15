@@ -71,6 +71,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
         chat_texts = [tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True) for msg in
                       messages]
         inputs = tokenizer(chat_texts, return_tensors="pt", padding=True, truncation=True).to(model.device)
+        del user_msgs, messages, chat_texts
 
         # Generate outputs
         outputs = model.generate(
@@ -91,8 +92,8 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
             if mapped_answer == correct_answers[i]:
                 correct += 1
 
-    del inputs, outputs, out, gen_part
-    torch.cuda.empty_cache()
+        del inputs, outputs, out, gen_part
+        torch.cuda.empty_cache()
 
     return correct / len(subject_records)
 
@@ -100,5 +101,5 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
 def evaluate_model(model, tokenizer, benchmark_data_dir, subject, lang, test_num):
     """Evaluate a pruned model on a subject*lang ."""
     test_recs = get_mmlu(benchmark_data_dir, subject, lang, test_num=test_num)
-    acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, lang, batch_size=50)
+    acc = evaluate_model_on_dataset(model, tokenizer, test_recs, subject, lang, batch_size=30)
     return acc

@@ -35,7 +35,7 @@ class EvalSpec:
 
 
 @torch.inference_mode()
-def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_size=50):
+def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_size=30):
     task_accuracies = {}
 
     for task in evaluation_spec.tasks:
