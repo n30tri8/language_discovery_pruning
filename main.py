@@ -145,6 +145,10 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
                 prune_wanda(model_to_prune, calib_data, ratio / 100.0)
             print("\n=== Wanda-based pruning done  ===")
 
+            print(f"memory_allocated: {torch.cuda.memory_allocated(DEVICE)}")
+            print(f"memory_reserved: {torch.cuda.memory_reserved(DEVICE)}")
+            print(f"max_memory_reserved: {torch.cuda.max_memory_reserved(DEVICE)}")
+
             linguistic_eval = evaluate_on_linguistic(model_to_prune, tokenizer, evaluation_spec)
             # Log post-pruning evaluation for this ratio
             writer.writerow([
