@@ -169,18 +169,16 @@ def prune_wanda(model, calib_data, sparsity_ratio):
             W = subset[name].weight.data
             row_norms = torch.sqrt(wrapped_layers[name].scaler_row).reshape(1, -1)
             W_metric = torch.abs(W) * row_norms
-
-            # unstructured pruning
-            W_mask = torch.zeros_like(W_metric, dtype=torch.bool)
+            del row_norms # not need this anymore
             # pick the fraction of smallest entries per-output
             k = int(W_metric.shape[1] * sparsity_ratio)
-            sort_res = torch.sort(W_metric, dim=-1, stable=True)
-            indices = sort_res[1][:, :k]
+            indices = torch.topk(W_metric, k, dim=-1, largest=False)[1]
+            W_mask = torch.zeros_like(W_metric, dtype=torch.bool)
             W_mask.scatter_(1, indices, True)
             subset[name].weight.data[W_mask] = 0  ## set weights to zero
 
             # Explicitly free memory
-            del W_metric, W_mask, sort_res, indices, row_norms
+            del W_metric, W_mask, indices
             torch.cuda.empty_cache()
 
         # forward pass again so next layer sees the pruned representation
