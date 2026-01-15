@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 
+from utils import DEVICE
 from .layerwrapper import WrappedGPT
 
 
@@ -69,7 +70,8 @@ def prepare_calibration(model, dataloader):
             attn = kwargs.get("attention_mask")
             if attn is None:  # no padding, therefore we create a symmetric square for attending to full sequence
                 token_mask = torch.ones(hidden_states.shape[1], dtype=torch.bool)
-                attn = token_mask[:hidden_states.shape[1]].unsqueeze(1) & token_mask[:hidden_states.shape[1]].unsqueeze(0)
+                attn = token_mask[:hidden_states.shape[1]].unsqueeze(1) & token_mask[:hidden_states.shape[1]].unsqueeze(
+                    0)
                 attn = attn.unsqueeze(0)
             elif attn.dim() == 4:
                 attn = attn[0]
@@ -169,7 +171,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
             W = subset[name].weight.data
             row_norms = torch.sqrt(wrapped_layers[name].scaler_row).reshape(1, -1)
             W_metric = torch.abs(W) * row_norms
-            del row_norms # not need this anymore
+            del row_norms  # not need this anymore
             # pick the fraction of smallest entries per-output
             k = int(W_metric.shape[1] * sparsity_ratio)
             indices = torch.topk(W_metric, k, dim=-1, largest=False)[1]
@@ -177,6 +179,9 @@ def prune_wanda(model, calib_data, sparsity_ratio):
             W_mask.scatter_(1, indices, True)
             subset[name].weight.data[W_mask] = 0  ## set weights to zero
 
+            if i == 5 or i == 13 or i == 14:
+                print("mem in mask calc")
+                print(torch.cuda.memory_summary(device=DEVICE, abbreviated=False))
             # Explicitly free memory
             del W_metric, W_mask, indices
             torch.cuda.empty_cache()
