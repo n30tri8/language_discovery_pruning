@@ -1,6 +1,5 @@
 import argparse
 import csv
-import gc
 import os
 from functools import partial
 
@@ -168,7 +167,7 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
                 print(f"Delegated saving model to thread: {thread}, save path: {save_path}")
 
             del model_to_prune
-            gc.collect()
+            # gc.collect()
             torch.cuda.empty_cache()
             # torch.cuda.synchronize()
 
