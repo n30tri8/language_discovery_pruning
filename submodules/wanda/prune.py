@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-from utils import DEVICE
 from .layerwrapper import WrappedGPT
 
 
@@ -179,9 +178,6 @@ def prune_wanda(model, calib_data, sparsity_ratio):
             W_mask.scatter_(1, indices, True)
             subset[name].weight.data[W_mask] = 0  ## set weights to zero
 
-            if i == 5 or i == 13 or i == 14:
-                print("mem in mask calc")
-                print(torch.cuda.memory_summary(device=DEVICE, abbreviated=False))
             # Explicitly free memory
             del W_metric, W_mask, indices
             torch.cuda.empty_cache()

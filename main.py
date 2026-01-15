@@ -140,8 +140,6 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
             print(f"\n=== Pruning on linguistic benchmark: '{benchmark}', ratio: {ratio} ===")
             model_to_prune = load_raw_model(model_name)
 
-            print("mem before pruning")
-            print(torch.cuda.memory_summary(device=DEVICE, abbreviated=False))
             # Prune
             with torch.no_grad():
                 prune_wanda(model_to_prune, calib_data, ratio / 100.0)
@@ -170,8 +168,6 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
 
             del model_to_prune
             torch.cuda.empty_cache()
-            print("mem after del")
-            print(torch.cuda.memory_summary(device=DEVICE, abbreviated=False))
 
     fout.close()
 
