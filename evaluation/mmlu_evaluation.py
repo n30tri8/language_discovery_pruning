@@ -63,6 +63,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
             letter_maps.append(letter_map)
             correct_answers.append(rec.get("answer"))
 
+        # TODO is this the style for every model, having a role:system followed by role:user, or specific to LlaMa
         # Tokenize batch
         messages = [
             [{"role": "system", "content": system_msg}, {"role": "user", "content": usr_msg}]
