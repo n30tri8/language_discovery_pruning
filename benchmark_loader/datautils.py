@@ -120,19 +120,13 @@ def _build_prompts(data, sys, user, assistant):
     return prompts
 
 
-def _tokenize_and_pad(prompts, tokenizer, pad=True, batch_size=1):
-    if pad:
-        encoded = []
-        for i in range(0, len(prompts), batch_size):
-            batch_prompts = prompts[i:i + batch_size]
-            padded = tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True,
-                               add_special_tokens=False)
-            encoded.append(padded)
-    else:
-        encoded = []
-        for txt in prompts:
-            input_ids = tokenizer(txt, return_tensors="pt", truncation=True, add_special_tokens=False)["input_ids"]
-            encoded.append(input_ids)
+def _tokenize_and_pad(prompts, tokenizer, batch_size=4):
+    encoded = []
+    for i in range(0, len(prompts), batch_size):
+        batch_prompts = prompts[i:i + batch_size]
+        padded = tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True,
+                           add_special_tokens=False)
+        encoded.append(padded)
 
     return encoded
 
@@ -243,7 +237,7 @@ def _load_xglue_for_calibration(dataset_base_dir, lang) -> Dict[str, List]:
     return tasks
 
 
-def get_xglue(tokenizer, base_dir, lang):
+def get_xglue(tokenizer, base_dir, lang, batch_size):
     """
     Prepare XGLUE test splits for Wanda calibration, matching get_glue() structure.
 
@@ -251,6 +245,7 @@ def get_xglue(tokenizer, base_dir, lang):
         tokenizer: tokenizer object
         base_dir (str): path to xglue_full_dataset/
         lang (str): language code (default "de")
+        batch_size (int): batch size for tokenizer padding batches
 
     Returns:
         train_loader (list): list of (input_ids, targets, attention_mask)
@@ -272,7 +267,7 @@ def get_xglue(tokenizer, base_dir, lang):
     for task, entries in selected.items():
         all_prompts.extend(entries)
 
-    train_loader = _tokenize_and_pad(all_prompts, tokenizer)
+    train_loader = _tokenize_and_pad(all_prompts, tokenizer, batch_size=batch_size)
     return train_loader
 
 
@@ -319,13 +314,14 @@ def _load_italian_tasks_for_calibration(benchmark_base_dir) -> Dict[str, List]:
     return tasks
 
 
-def get_italian_calib(tokenizer, base_dir):
+def get_italian_calib(tokenizer, base_dir, batch_size):
     """
     Prepare italian test splits for Wanda calibration, matching get_glue() structure.
 
     Args:
         tokenizer: tokenizer object
         base_dir (str): path to benchmark_data/
+        batch_size (int): batch size for tokenizer padding batches
 
     Returns:
         train_loader (list): list of (input_ids, targets, attention_mask)
@@ -347,7 +343,7 @@ def get_italian_calib(tokenizer, base_dir):
     for task, entries in selected.items():
         all_prompts.extend(entries)
 
-    train_loader = _tokenize_and_pad(all_prompts, tokenizer)
+    train_loader = _tokenize_and_pad(all_prompts, tokenizer, batch_size=batch_size)
     return train_loader
 
 
@@ -407,13 +403,14 @@ def _load_arabic_tasks_for_calibration(benchmark_base_dir) -> Dict[str, List]:
     return tasks
 
 
-def get_arabic_calib(tokenizer, base_dir):
+def get_arabic_calib(tokenizer, base_dir, batch_size):
     """
     Prepare arabic test splits for Wanda calibration, matching get_glue() structure.
 
     Args:
         tokenizer: tokenizer object
         base_dir (str): path to benchmark_data/
+        batch_size (int): batch size for tokenizer padding batches
 
     Returns:
         train_loader (list): list of (input_ids, targets, attention_mask)
@@ -435,7 +432,7 @@ def get_arabic_calib(tokenizer, base_dir):
     for task, entries in selected.items():
         all_prompts.extend(entries)
 
-    train_loader = _tokenize_and_pad(all_prompts, tokenizer)
+    train_loader = _tokenize_and_pad(all_prompts, tokenizer, batch_size=batch_size)
     return train_loader
 
 
@@ -495,13 +492,14 @@ def _load_hindi_tasks_for_calibration(benchmark_base_dir) -> Dict[str, List]:
     return tasks
 
 
-def get_hindi_calib(tokenizer, base_dir):
+def get_hindi_calib(tokenizer, base_dir, batch_size):
     """
     Prepare hindi test splits for Wanda calibration, matching get_glue() structure.
 
     Args:
         tokenizer: tokenizer object
         base_dir (str): path to benchmark_data/
+        batch_size (int): batch size for tokenizer padding batches
 
     Returns:
         train_loader (list): list of (input_ids, targets, attention_mask)
@@ -523,7 +521,7 @@ def get_hindi_calib(tokenizer, base_dir):
     for task, entries in selected.items():
         all_prompts.extend(entries)
 
-    train_loader = _tokenize_and_pad(all_prompts, tokenizer)
+    train_loader = _tokenize_and_pad(all_prompts, tokenizer, batch_size=batch_size)
     return train_loader
 
 
