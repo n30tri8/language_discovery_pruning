@@ -1,3 +1,5 @@
+import gc
+
 import torch
 from tqdm import tqdm
 
@@ -91,7 +93,9 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
                 if model_extracted_answer == correct_answers[idx]:
                     correct += 1
 
+            # free GPU memory
             del inputs, outputs, gen_part
+            gc.collect()
             torch.cuda.empty_cache()
 
         task_accuracy = round(correct / len(records), 6)

@@ -88,8 +88,9 @@ def evaluate_raw_model(model_name, test_num, run_env, selected_languages):
             writer.writerow([model_name, subject, lang, f"{subtask_acc:.4f}"])
             fout.flush()
 
-    # Cleanup raw model
+    # free GPU memory
     del raw_model
+    gc.collect()
     torch.cuda.empty_cache()
 
     fout.close()
@@ -135,7 +136,10 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
         benchmark_data = benchmark_loader(tokenizer)
         with torch.no_grad():
             calib_data = prepare_calibration(raw_model, benchmark_data)
+        # free GPU memory
         del raw_model
+        gc.collect()  # had to call this manually to free gpu memory
+        torch.cuda.empty_cache()
 
         for ratio in sparsity_ratios:
             print(f"\n=== Pruning on linguistic benchmark: '{benchmark}', ratio: {ratio} ===")
@@ -167,8 +171,9 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
                 save_threads.append(thread)
                 print(f"Delegated saving model to thread: {thread}, save path: {save_path}")
 
+            # free GPU memory
             del model_to_prune
-            gc.collect() # had to call this manually to free gpu memory
+            gc.collect()
             torch.cuda.empty_cache()
 
     fout.close()
@@ -214,7 +219,11 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
                 # Write results to file
                 writer.writerow([model_name, linguistic_pruned, lang, ratio, subject, subtask_acc])
                 fout.flush()
-    # todo gpu memory issue, after first iteration
+
+            # free GPU memory
+            del pruned_model
+            gc.collect()
+            torch.cuda.empty_cache()
 
     fout.close()
 

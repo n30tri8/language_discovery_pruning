@@ -1,3 +1,5 @@
+import gc
+
 import torch
 from tqdm import tqdm
 
@@ -93,7 +95,9 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
             if mapped_answer == correct_answers[i]:
                 correct += 1
 
+        # free GPU memory
         del inputs, outputs, out, gen_part
+        gc.collect()
         torch.cuda.empty_cache()
 
     accuracy = round(correct / len(subject_records), 6)
