@@ -154,7 +154,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
                     inps[j].to(layer_dev),
                     attention_mask=attention_masks[j].to(layer_dev),
                     position_embeddings=pe
-                )
+                ).cpu()  # keep the outs on cpu since it is not needed for processing by gpu
         del pe
         torch.cuda.empty_cache()
 
@@ -199,7 +199,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
                     inps[j].to(layer_dev),
                     attention_mask=attention_masks[j].to(layer_dev),
                     position_embeddings=pe
-                )
+                ).cpu()  # keep the outs on cpu since it is not needed for processing by gpu
         del pe
 
         # swap
