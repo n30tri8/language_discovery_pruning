@@ -96,7 +96,8 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
         del inputs, outputs, out, gen_part
         torch.cuda.empty_cache()
 
-    return correct / len(subject_records)
+    accuracy = round(correct / len(subject_records), 6)
+    return accuracy
 
 
 def evaluate_model(model, tokenizer, benchmark_data_dir, subject, lang, test_num):

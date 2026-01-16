@@ -94,7 +94,7 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
             del inputs, outputs, gen_part
             torch.cuda.empty_cache()
 
-        task_accuracy = correct / len(records)
+        task_accuracy = round(correct / len(records), 6)
         task_accuracies[task] = task_accuracy
 
     return task_accuracies
