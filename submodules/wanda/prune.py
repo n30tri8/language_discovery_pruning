@@ -65,12 +65,11 @@ def prepare_calibration(model, dataloader):
             inps[idx].requires_grad = False
 
             attn = kwargs.get("attention_mask")
-            # if attn is None:  # no padding, therefore we create a symmetric square for attending to full sequence
-            #     token_mask = torch.ones(hidden_states.shape[1], dtype=torch.bool)
-            #     attn = token_mask[:hidden_states.shape[1]].unsqueeze(1) & token_mask[:hidden_states.shape[1]].unsqueeze(
-            #         0)
-            #     attn = attn.unsqueeze(0)
-            # #     TODO batch_size,1,seqlen,seqlen
+            if attn is None:  # no padding, therefore we create a symmetric square for attending to full sequence
+                token_mask = torch.ones(hidden_states.shape[1], dtype=torch.bool)
+                attn = token_mask[:hidden_states.shape[1]].unsqueeze(1) & token_mask[:hidden_states.shape[1]].unsqueeze(
+                    0)
+                attn = attn.unsqueeze(0).unsqueeze(0)
             attention_masks[idx] = attn.cpu()
 
             pe0, pe1 = kwargs.get("position_embeddings", None)
