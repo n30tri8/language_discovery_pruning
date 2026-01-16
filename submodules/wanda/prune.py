@@ -1,3 +1,5 @@
+import copy
+
 import torch
 import torch.nn as nn
 from tqdm import tqdm
@@ -39,7 +41,6 @@ def prepare_calibration(model, dataloader):
     count_batches = len(dataloader)
     inps = [None] * count_batches
     attention_masks = [None] * count_batches
-    outs = [None] * count_batches
     position_embeddings = [None] * count_batches
     cache = {'i': 0}
 
@@ -95,7 +96,6 @@ def prepare_calibration(model, dataloader):
         "inps": inps,
         "attention_masks": attention_masks,
         "position_embeddings": position_embeddings,
-        "outs": outs
     }
     model.config.use_cache = use_cache
 
@@ -110,10 +110,12 @@ def prune_wanda(model, calib_data, sparsity_ratio):
     use_cache = model.config.use_cache
     model.config.use_cache = False
 
-    inps = calib_data["inps"]
-    outs = calib_data["outs"]
+    # Create copies of the lists to avoid modifying the original calib_data
+    inps = copy.deepcopy(calib_data["inps"])
     attention_masks = calib_data["attention_masks"]
     position_embeddings = calib_data["position_embeddings"]
+    count_batches = len(inps)
+    outs = [None] * count_batches
 
     layers = model.model.layers
     for i, layer in enumerate(tqdm(layers, desc="Processing layers")):
@@ -141,7 +143,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
         layer_dev = next(layer.parameters()).device
         # forward pass all calibration samples
         with torch.no_grad():
-            for j in range(len(inps)):
+            for j in range(count_batches):
                 pe = (
                     position_embeddings[j][0].expand(inps[j].shape[0], -1, -1).to(layer_dev) if position_embeddings[j][
                                                                                                     0] is not None else None,
@@ -186,7 +188,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
 
         # forward pass again so next layer sees the pruned representation
         with torch.no_grad():
-            for j in range(len(inps)):
+            for j in range(count_batches):
                 pe = (
                     position_embeddings[j][0].expand(inps[j].shape[0], -1, -1).to(layer_dev) if position_embeddings[j][
                                                                                                     0] is not None else None,
@@ -204,6 +206,6 @@ def prune_wanda(model, calib_data, sparsity_ratio):
         inps, outs = outs, inps
         torch.cuda.empty_cache()
 
-    del inps, outs, attention_masks, position_embeddings
+    del inps, outs
     model.config.use_cache = use_cache
     torch.cuda.empty_cache()
