@@ -131,7 +131,7 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
 
         # Prepare data
         benchmark_loader = LINGUISTIC_BENCHMARKS[benchmark]['loader']
-        benchmark_data, _ = benchmark_loader(tokenizer)
+        benchmark_data = benchmark_loader(tokenizer)
         with torch.no_grad():
             calib_data = prepare_calibration(raw_model, benchmark_data)
         del raw_model

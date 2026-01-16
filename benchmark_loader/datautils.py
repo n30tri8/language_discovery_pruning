@@ -120,23 +120,21 @@ def _build_prompts(data, sys, user, assistant):
     return prompts
 
 
-def _tokenize_and_pad(prompts, tokenizer, pad=False):
+def _tokenize_and_pad(prompts, tokenizer, pad=True, batch_size=16):
     if pad:
-        encoded = tokenizer(prompts, return_tensors="pt", padding=True, truncation=True, add_special_tokens=False)
-        max_len = encoded["input_ids"].shape[1]
-        # rearrange to fit into old usage pattern, add a batch dimension of size 1
-        rearranged = [(ids.unsqueeze(0), attn.unsqueeze(0)) for ids, attn in
-                      zip(encoded["input_ids"], encoded["attention_mask"])]
-        encoded = rearranged
+        encoded = []
+        for i in range(0, len(prompts), batch_size):
+            batch_prompts = prompts[i:i + batch_size]
+            padded = tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True,
+                               add_special_tokens=False)
+            encoded.append(padded)
     else:
         encoded = []
-        max_len = -1
         for txt in prompts:
             input_ids = tokenizer(txt, return_tensors="pt", truncation=True, add_special_tokens=False)["input_ids"]
-            max_len = max(max_len, input_ids.shape[1])
             encoded.append(input_ids)
 
-    return encoded, max_len
+    return encoded
 
 
 # ENGLISH
@@ -274,8 +272,8 @@ def get_xglue(tokenizer, base_dir, lang):
     for task, entries in selected.items():
         all_prompts.extend(entries)
 
-    train_loader, max_cal_len = _tokenize_and_pad(all_prompts, tokenizer)
-    return train_loader, max_cal_len
+    train_loader = _tokenize_and_pad(all_prompts, tokenizer)
+    return train_loader
 
 
 # ITALIAN
@@ -349,8 +347,8 @@ def get_italian_calib(tokenizer, base_dir):
     for task, entries in selected.items():
         all_prompts.extend(entries)
 
-    train_loader, max_cal_len = _tokenize_and_pad(all_prompts, tokenizer)
-    return train_loader, max_cal_len
+    train_loader = _tokenize_and_pad(all_prompts, tokenizer)
+    return train_loader
 
 
 # ARABIC
@@ -437,8 +435,8 @@ def get_arabic_calib(tokenizer, base_dir):
     for task, entries in selected.items():
         all_prompts.extend(entries)
 
-    train_loader, max_cal_len = _tokenize_and_pad(all_prompts, tokenizer)
-    return train_loader, max_cal_len
+    train_loader = _tokenize_and_pad(all_prompts, tokenizer)
+    return train_loader
 
 
 # Hindi
@@ -525,15 +523,16 @@ def get_hindi_calib(tokenizer, base_dir):
     for task, entries in selected.items():
         all_prompts.extend(entries)
 
-    train_loader, max_cal_len = _tokenize_and_pad(all_prompts, tokenizer)
-    return train_loader, max_cal_len
+    train_loader = _tokenize_and_pad(all_prompts, tokenizer)
+    return train_loader
 
 
 # test cases
 def test_get_mmlu():
     subject, lang = "management", "EN"
 
-    benchmark_data_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "../submodules", "..", "benchmark_data", "mmlu"))
+    benchmark_data_dir = os.path.normpath(
+        os.path.join(os.path.dirname(__file__), "../submodules", "..", "benchmark_data", "mmlu"))
     test_records = get_mmlu(benchmark_data_dir, subject, lang, test_num=2)
 
     print("Test records samples:")

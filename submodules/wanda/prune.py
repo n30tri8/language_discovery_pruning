@@ -36,12 +36,11 @@ def prepare_calibration(model, dataloader):
     if "model.embed_tokens" in model.hf_device_map:
         dev = model.hf_device_map["model.embed_tokens"]
 
-    count_samples = len(dataloader)
-    inps = [None] * count_samples
-    attention_masks = [None] * count_samples
-    outs = [None] * count_samples
-    position_embeddings_0 = [None] * count_samples
-    position_embeddings_1 = [None] * count_samples
+    count_batches = len(dataloader)
+    inps = [None] * count_batches
+    attention_masks = [None] * count_batches
+    outs = [None] * count_batches
+    position_embeddings = [None] * count_batches
     cache = {'i': 0}
 
     # We'll use a forward hook on the first layer to capture the hidden states
@@ -63,33 +62,30 @@ def prepare_calibration(model, dataloader):
         def forward(self, hidden_states, **kwargs):
             idx: int = cache["i"]
 
-            inps[idx] = hidden_states[0].cpu()
+            inps[idx] = hidden_states.cpu()
             inps[idx].requires_grad = False
 
             attn = kwargs.get("attention_mask")
-            if attn is None:  # no padding, therefore we create a symmetric square for attending to full sequence
-                token_mask = torch.ones(hidden_states.shape[1], dtype=torch.bool)
-                attn = token_mask[:hidden_states.shape[1]].unsqueeze(1) & token_mask[:hidden_states.shape[1]].unsqueeze(
-                    0)
-                attn = attn.unsqueeze(0)
-            elif attn.dim() == 4:
-                attn = attn[0]
-            else:
-                raise RuntimeError(f"Unexpected attention_mask ndim={attn.dim()}")
+            # if attn is None:  # no padding, therefore we create a symmetric square for attending to full sequence
+            #     token_mask = torch.ones(hidden_states.shape[1], dtype=torch.bool)
+            #     attn = token_mask[:hidden_states.shape[1]].unsqueeze(1) & token_mask[:hidden_states.shape[1]].unsqueeze(
+            #         0)
+            #     attn = attn.unsqueeze(0)
+            # #     TODO batch_size,1,seqlen,seqlen
             attention_masks[idx] = attn.cpu()
 
             pe0, pe1 = kwargs.get("position_embeddings", None)
-            position_embeddings_0[idx] = pe0.cpu()
-            position_embeddings_1[idx] = pe1.cpu()
+            position_embeddings[idx] = (pe0.cpu(), pe1.cpu())
 
             cache["i"] += 1
             raise ValueError  # early stop
 
     # Hook the first layer
     layers[0] = Catcher(layers[0])
-    for sample in dataloader:
+    for batch in dataloader:
         try:
-            _ = model(sample.to(dev), use_cache=False)
+            batch = batch.to(dev)
+            _ = model(**batch, use_cache=False)
         except ValueError:
             pass
     # Restore the actual layer
@@ -98,8 +94,7 @@ def prepare_calibration(model, dataloader):
     calib_data = {
         "inps": inps,
         "attention_masks": attention_masks,
-        "position_embeddings_0": position_embeddings_0,
-        "position_embeddings_1": position_embeddings_1,
+        "position_embeddings": position_embeddings,
         "outs": outs
     }
     model.config.use_cache = use_cache
@@ -118,9 +113,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
     inps = calib_data["inps"]
     outs = calib_data["outs"]
     attention_masks = calib_data["attention_masks"]
-    position_embeddings_0 = calib_data["position_embeddings_0"]
-    position_embeddings_1 = calib_data["position_embeddings_1"]
-    count_samples = len(inps)
+    position_embeddings = calib_data["position_embeddings"]
 
     layers = model.model.layers
     for i, layer in enumerate(tqdm(layers, desc="Processing layers")):
@@ -148,11 +141,12 @@ def prune_wanda(model, calib_data, sparsity_ratio):
         layer_dev = next(layer.parameters()).device
         # forward pass all calibration samples
         with torch.no_grad():
-            for j in range(count_samples):
+            for j in range(len(inps)):
                 outs[j] = layer(
-                    inps[j].unsqueeze(0).to(layer_dev),
-                    attention_mask=attention_masks[j].unsqueeze(0).to(layer_dev),
-                    position_embeddings=(position_embeddings_0[j].to(layer_dev), position_embeddings_1[j].to(layer_dev))
+                    inps[j].to(layer_dev),
+                    attention_mask=attention_masks[j].to(layer_dev),
+                    position_embeddings=(position_embeddings[j][0].to(layer_dev),
+                                         position_embeddings[j][1].to(layer_dev))
                 )[0]
         torch.cuda.empty_cache()
 
@@ -186,17 +180,18 @@ def prune_wanda(model, calib_data, sparsity_ratio):
 
         # forward pass again so next layer sees the pruned representation
         with torch.no_grad():
-            for j in range(count_samples):
+            for j in range(len(inps)):
                 outs[j] = layer(
-                    inps[j].unsqueeze(0).to(layer_dev),
-                    attention_mask=attention_masks[j].unsqueeze(0).to(layer_dev),
-                    position_embeddings=(position_embeddings_0[j].to(layer_dev), position_embeddings_1[j].to(layer_dev))
+                    inps[j].to(layer_dev),
+                    attention_mask=attention_masks[j].to(layer_dev),
+                    position_embeddings=(position_embeddings[j][0].to(layer_dev),
+                                         position_embeddings[j][1].to(layer_dev))
                 )[0]
 
         # swap
         inps, outs = outs, inps
         torch.cuda.empty_cache()
 
-    del inps, outs, attention_masks, position_embeddings_0, position_embeddings_1
+    del inps, outs, attention_masks, position_embeddings
     model.config.use_cache = use_cache
     torch.cuda.empty_cache()
