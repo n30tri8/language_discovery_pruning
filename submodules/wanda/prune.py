@@ -33,13 +33,8 @@ def find_layers(module, layers=[nn.Linear], name=''):
 def prepare_calibration(model, dataloader):
     use_cache = model.config.use_cache
     model.config.use_cache = False
-    layers = model.model.layers
 
-    dev = None
-    if "model.embed_tokens" in model.hf_device_map:
-        dev = model.hf_device_map["model.embed_tokens"]
-    print(f"dev1: {dev}")
-    print(f"dev2, model: {model.device}")
+    layer_dev = next(model.model.layers[0].parameters()).device
 
     count_batches = len(dataloader)
     inps = [None] * count_batches
@@ -85,10 +80,11 @@ def prepare_calibration(model, dataloader):
             raise ValueError  # early stop
 
     # Hook the first layer
+    layers = model.model.layers
     layers[0] = Catcher(layers[0])
     for batch in dataloader:
         try:
-            batch = batch.to(dev)
+            batch = batch.to(layer_dev)
             _ = model(**batch, use_cache=False)
         except ValueError:
             pass
