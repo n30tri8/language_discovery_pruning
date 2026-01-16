@@ -83,22 +83,22 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
             do_sample=False,
             pad_token_id=tokenizer.pad_token_id,
             top_p=None,
-        )
+        ).cpu()
 
-        # Decode and evaluate
         input_length = inputs["input_ids"].shape[1]
-        for i, out in enumerate(outputs):
-            gen_part = out[input_length:]
-            gen_text = tokenizer.decode(gen_part, skip_special_tokens=True)
-            model_extracted_answer = extract_answer(gen_text)
-            mapped_answer = letter_maps[i].get(model_extracted_answer)
-            if mapped_answer == correct_answers[i]:
-                correct += 1
-
         # free GPU memory
-        del inputs, outputs, out, gen_part
+        del inputs
         gc.collect()
         torch.cuda.empty_cache()
+
+        # Decode and evaluate
+        for idx in range(len(batch)):
+            gen_part = outputs[idx, input_length:]
+            gen_text = tokenizer.decode(gen_part, skip_special_tokens=True)
+            model_extracted_answer = extract_answer(gen_text)
+            mapped_answer = letter_maps[idx].get(model_extracted_answer)
+            if mapped_answer == correct_answers[idx]:
+                correct += 1
 
     accuracy = round(correct / len(subject_records), 6)
     return accuracy

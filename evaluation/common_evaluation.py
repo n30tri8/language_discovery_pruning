@@ -1,9 +1,6 @@
 import gc
 
 import torch
-from tqdm import tqdm
-
-from utils import DEVICE
 
 
 class EvalSpec:
@@ -82,21 +79,21 @@ def evaluate_on_linguistic(model, tokenizer, evaluation_spec: EvalSpec, batch_si
                 do_sample=False,
                 pad_token_id=tokenizer.pad_token_id,
                 top_p=None,
-            )
+            ).cpu()
+
+            input_length = inputs["input_ids"].shape[1]
+            # free GPU memory
+            del inputs
+            gc.collect()
+            torch.cuda.empty_cache()
 
             # Decode and evaluate
-            input_length = inputs["input_ids"].shape[1]
             for idx in range(len(batch)):
                 gen_part = outputs[idx, input_length:]
                 gen_text = tokenizer.decode(gen_part, skip_special_tokens=True)
                 model_extracted_answer = evaluation_spec.extract_answer(gen_text, task=task)
                 if model_extracted_answer == correct_answers[idx]:
                     correct += 1
-
-            # free GPU memory
-            del inputs, outputs, gen_part
-            gc.collect()
-            torch.cuda.empty_cache()
 
         task_accuracy = round(correct / len(records), 6)
         task_accuracies[task] = task_accuracy
