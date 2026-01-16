@@ -152,7 +152,8 @@ def prune_wanda(model, calib_data, sparsity_ratio):
                     inps[j].to(layer_dev),
                     attention_mask=attention_masks[j].to(layer_dev),
                     position_embeddings=pe
-                )[0]
+                )
+        del pe
         torch.cuda.empty_cache()
 
         # remove hooks
@@ -196,7 +197,8 @@ def prune_wanda(model, calib_data, sparsity_ratio):
                     inps[j].to(layer_dev),
                     attention_mask=attention_masks[j].to(layer_dev),
                     position_embeddings=pe
-                )[0]
+                )
+        del pe
 
         # swap
         inps, outs = outs, inps
