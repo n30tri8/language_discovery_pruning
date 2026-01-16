@@ -181,7 +181,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
             subset[name].weight.data[W_mask] = 0  ## set weights to zero
         # free GPU memory
         del W, W_metric, W_mask, indices
-        # # del wrapped_layers, contains wrapped_layers[sublayer].scaler_row per sublayer
+        # del wrapped_layers, contains wrapped_layers[sublayer].scaler_row per sublayer
         del wrapped_layers
         gc.collect()
         torch.cuda.empty_cache()
