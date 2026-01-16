@@ -121,7 +121,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
     for i, layer in enumerate(tqdm(layers, desc="Processing layers")):
         subset = find_layers(layer)
 
-        # For each sub-layer, wrap it so we can track input norms
+        # For each sub-layer, wrap it so we can track input norms in wrapped_layers[name].scaler_row
         wrapped_layers = {}
         for name in subset:
             wrapped_layers[name] = WrappedGPT(subset[name])
@@ -182,9 +182,10 @@ def prune_wanda(model, calib_data, sparsity_ratio):
             W_mask.scatter_(1, indices, True)
             subset[name].weight.data[W_mask.to(subset[name].weight.device)] = 0  ## set weights to zero
 
-            # Explicitly free memory
-            del W, scaler_row_cpu, W_metric, W_mask, indices
-            torch.cuda.empty_cache()
+        del W, scaler_row_cpu, W_metric, W_mask, indices
+        # del wrapped_layers, contains wrapped_layers[sublayer].scaler_row per sublayer
+        del wrapped_layers
+        torch.cuda.empty_cache()
 
         # forward pass again so next layer sees the pruned representation
         with torch.no_grad():
