@@ -148,7 +148,7 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
             # Prune
             with torch.no_grad():
                 prune_wanda(model_to_prune, calib_data, ratio / 100.0)
-            print("\n=== Wanda-based pruning done ===")
+            print("=== Wanda-based pruning done ===")
 
             linguistic_eval = evaluate_on_linguistic(model_to_prune, tokenizer, evaluation_spec)
             # Log post-pruning evaluation for this ratio
