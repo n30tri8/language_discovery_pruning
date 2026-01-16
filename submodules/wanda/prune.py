@@ -38,6 +38,8 @@ def prepare_calibration(model, dataloader):
     dev = None
     if "model.embed_tokens" in model.hf_device_map:
         dev = model.hf_device_map["model.embed_tokens"]
+    print(f"dev1: {dev}")
+    print(f"dev2, model: {model.device}")
 
     count_batches = len(dataloader)
     inps = [None] * count_batches
