@@ -127,7 +127,7 @@ def prune_wanda(model, calib_data, sparsity_ratio):
         # Register hooks
         def make_hook(n):
             def f(_, x_in, x_out):
-                # x_in is a tuple of (hidden_states,) for a typical forward
+                # x_in is a tuple of positional arguments given to the layer for a typical forward, x_in[0] is inps[j] here
                 # We'll pass both input & output to the wrapper
                 wrapped_layers[n].add_batch(x_in[0].data, x_out.data)
 
