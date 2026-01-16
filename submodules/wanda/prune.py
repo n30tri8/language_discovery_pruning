@@ -142,11 +142,16 @@ def prune_wanda(model, calib_data, sparsity_ratio):
         # forward pass all calibration samples
         with torch.no_grad():
             for j in range(len(inps)):
+                pe = (
+                    position_embeddings[j][0].expand(inps[j].shape[0], -1, -1).to(layer_dev) if position_embeddings[j][
+                                                                                                    0] is not None else None,
+                    position_embeddings[j][1].expand(inps[j].shape[0], -1, -1).to(layer_dev) if position_embeddings[j][
+                                                                                                    1] is not None else None
+                )
                 outs[j] = layer(
                     inps[j].to(layer_dev),
                     attention_mask=attention_masks[j].to(layer_dev),
-                    position_embeddings=(position_embeddings[j][0].to(layer_dev),
-                                         position_embeddings[j][1].to(layer_dev))
+                    position_embeddings=pe
                 )[0]
         torch.cuda.empty_cache()
 
@@ -181,11 +186,16 @@ def prune_wanda(model, calib_data, sparsity_ratio):
         # forward pass again so next layer sees the pruned representation
         with torch.no_grad():
             for j in range(len(inps)):
+                pe = (
+                    position_embeddings[j][0].expand(inps[j].shape[0], -1, -1).to(layer_dev) if position_embeddings[j][
+                                                                                                    0] is not None else None,
+                    position_embeddings[j][1].expand(inps[j].shape[0], -1, -1).to(layer_dev) if position_embeddings[j][
+                                                                                                    1] is not None else None
+                )
                 outs[j] = layer(
                     inps[j].to(layer_dev),
                     attention_mask=attention_masks[j].to(layer_dev),
-                    position_embeddings=(position_embeddings[j][0].to(layer_dev),
-                                         position_embeddings[j][1].to(layer_dev))
+                    position_embeddings=pe
                 )[0]
 
         # swap
