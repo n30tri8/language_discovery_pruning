@@ -138,8 +138,6 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
         del raw_model
 
         for ratio in sparsity_ratios:
-            print(f"debug[sparsity_ratios]=calib_data::inp.device={calib_data['inps'][2].device}")
-            print(f"debug[sparsity_ratios]=calib_data::attention_masks.device={calib_data['attention_masks'][5].device}")
             print(f"\n=== Pruning on linguistic benchmark: '{benchmark}', ratio: {ratio} ===")
             model_to_prune = load_raw_model(model_name)
 
@@ -170,7 +168,7 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
                 print(f"Delegated saving model to thread: {thread}, save path: {save_path}")
 
             del model_to_prune
-            gc.collect()
+            gc.collect() # had to call this manually to free gpu memory
             torch.cuda.empty_cache()
 
     fout.close()
