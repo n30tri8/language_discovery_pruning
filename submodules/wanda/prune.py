@@ -1,4 +1,5 @@
 import copy
+import gc
 
 import torch
 import torch.nn as nn
@@ -155,7 +156,9 @@ def prune_wanda(model, calib_data, sparsity_ratio):
                     attention_mask=attention_masks[j].to(layer_dev),
                     position_embeddings=pe
                 ).cpu()  # keep the outs on cpu since it is not needed for processing by gpu
+        # free GPU memory
         del pe
+        gc.collect()
         torch.cuda.empty_cache()
 
         # remove hooks
@@ -165,14 +168,11 @@ def prune_wanda(model, calib_data, sparsity_ratio):
         # Wanda: unstructured => pick top-K
         for name in tqdm(
                 wrapped_layers.keys(),
-                desc=f"Pruning sublayers in layer {i} name {name}",
-                leave=False,
+                desc=f"Pruning sub-layers in layer {i} name {name}", leave=False,
         ):
-            # Move tensors to CPU for metric calculation and sorting to save GPU memory
             # Weighted metric = abs(W) * sqrt( row-norm of input )
-            W = subset[name].weight.data.cpu()
-            scaler_row_cpu = wrapped_layers[name].scaler_row.cpu()
-            row_norms = torch.sqrt(scaler_row_cpu).reshape(1, -1)
+            W = subset[name].weight.data
+            row_norms = torch.sqrt(wrapped_layers[name].scaler_row).reshape(1, -1)
             W_metric = torch.abs(W) * row_norms
             del row_norms  # not need this anymore
             # pick the fraction of smallest entries per-output
@@ -180,11 +180,12 @@ def prune_wanda(model, calib_data, sparsity_ratio):
             indices = torch.topk(W_metric, k, dim=-1, largest=False)[1]
             W_mask = torch.zeros_like(W_metric, dtype=torch.bool)
             W_mask.scatter_(1, indices, True)
-            subset[name].weight.data[W_mask.to(subset[name].weight.device)] = 0  ## set weights to zero
-
-        del W, scaler_row_cpu, W_metric, W_mask, indices
-        # del wrapped_layers, contains wrapped_layers[sublayer].scaler_row per sublayer
+            subset[name].weight.data[W_mask] = 0  ## set weights to zero
+        # free GPU memory
+        del W, W_metric, W_mask, indices
+        # # del wrapped_layers, contains wrapped_layers[sublayer].scaler_row per sublayer
         del wrapped_layers
+        gc.collect()
         torch.cuda.empty_cache()
 
         # forward pass again so next layer sees the pruned representation
@@ -205,8 +206,11 @@ def prune_wanda(model, calib_data, sparsity_ratio):
 
         # swap
         inps, outs = outs, inps
+        # free GPU memory
+        gc.collect()
         torch.cuda.empty_cache()
 
-    del inps, outs
     model.config.use_cache = use_cache
+    del inps, outs
+    gc.collect()
     torch.cuda.empty_cache()
