@@ -120,7 +120,7 @@ def _build_prompts(data, sys, user, assistant):
     return prompts
 
 
-def _tokenize_and_pad(prompts, tokenizer, pad=True, batch_size=16):
+def _tokenize_and_pad(prompts, tokenizer, pad=True, batch_size=8):
     if pad:
         encoded = []
         for i in range(0, len(prompts), batch_size):
