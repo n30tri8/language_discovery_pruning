@@ -107,7 +107,7 @@ def evaluate_model_on_dataset(model, tokenizer, subject_records, subject, lang, 
 def evaluate_model(model, tokenizer, benchmark_data_dir, subject, lang, test_num):
     """Evaluate a pruned model on a subject*lang ."""
     test_recs = get_mmlu(benchmark_data_dir, subject, lang, test_num=test_num)
-    if lang == "hi":  # for this lang, tokenization and processing takes a lot of RAM
+    if lang == "hi":  # for this (subject*lang), tokenization and processing takes a lot of RAM
         batch_size = 8
     else:
         batch_size = 30
