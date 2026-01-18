@@ -15,7 +15,7 @@ from evaluation.mmlu_evaluation import evaluate_model
 from evaluation.xglue_spec import XGlueEvalSpec
 from submodules.wanda.prune import prune_wanda, prepare_calibration
 from utils import setup_environment, setup_tokenizer, load_raw_model, save_pruned_model_async, \
-    load_pruned_model, model_dir, DEVICE
+    load_pruned_model, model_dir
 
 SUBJECTS = ["philosophy", "international_law", "high_school_mathematics", "professional_psychology",
             "professional_medicine", "sociology", "marketing", "high_school_chemistry", "clinical_knowledge"]
@@ -210,7 +210,7 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
             load_path = model_dir(
                 run_env['model_dir'], model_name, linguistic_pruned, lang, ratio
             )
-            pruned_model, _ = load_pruned_model(load_path, device=DEVICE)
+            pruned_model, _ = load_pruned_model(load_path)
             print(f"\n=== Loaded pruned model from {load_path} ===")
 
             for subject in SUBJECTS:

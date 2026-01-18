@@ -8,7 +8,8 @@ import torch
 from huggingface_hub import login
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device(
+    "cuda" if torch.cuda.is_available() else "cpu")  # project uses device-agnostic implementation, this variable definition is old
 # Default cache dir; can be overridden by setup_environment
 RAW_MODEL_DIR = "raw_model"
 
@@ -103,7 +104,7 @@ def save_pruned_model_async(model, save_path):
     return thread  # Return thread if caller wants to join()
 
 
-def load_pruned_model(load_path, device=DEVICE):
+def load_pruned_model(load_path):
     """Load a pruned model saved with the same naming convention."""
     if not os.path.isdir(load_path):
         raise FileNotFoundError(f"Pruned model not found at `{load_path}`")
