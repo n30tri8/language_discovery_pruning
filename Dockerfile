@@ -15,8 +15,10 @@ FROM lang_discovery/raw_model/qwen2.5_7b AS app
 # Copy the project files into the container
 COPY benchmark_data ./benchmark_data
 COPY submodules ./submodules
-COPY main.py mmlu_evaluation.py pruning.py utils.py ./
+COPY benchmark_loader ./benchmark_loader
+COPY evaluation ./evaluation
+COPY main.py utils.py ./
 
 # Command to run the application
 ENTRYPOINT ["python", "main.py"]
-CMD ["--model", "Qwen/Qwen2.5-7B-Instruct", "--test_num", "400", "--sparsity_ratios", "50", "--run", "raw_eval", "prune", "cross_eval", "--languages", "en"]
+CMD ["--model", "Qwen/Qwen2.5-7B-Instruct", "--test_num", "300", "--sparsity_ratios", "50", "--run", "raw_eval", "prune", "cross_eval", "--languages", "en"]
