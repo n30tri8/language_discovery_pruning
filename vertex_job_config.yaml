@@ -6,7 +6,7 @@ workerPoolSpecs:
 #    acceleratorCount: 2
   replicaCount: 1
   containerSpec:
-    imageUri: us-west1-docker.pkg.dev/sonorous-treat-476419-s8/main-docker/pruning
+    imageUri: us-west1-docker.pkg.dev/{project-id}/{artifact-registry}/pruning
     env:
     - name: HF_TOKEN
       value: <hf_...>
