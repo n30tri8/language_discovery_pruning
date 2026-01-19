@@ -109,7 +109,7 @@ python main.py --model <model_name> [options]
     python main.py --model meta-llama/Llama-3.1-8B-Instruct --run prune --sparsity_ratios 35 50 60 --languages en hi it --no-save_pruned
     ```
 
-3.  **Run the full pipeline: prune and then cross-evaluate on all available languages:**
+3.  **Prune and then cross-evaluate on all available languages:**
     ```bash
     python main.py --model meta-llama/Llama-3.1-8B-Instruct --run prune cross_eval --test_num 300 --sparsity_ratios 60
     ```
