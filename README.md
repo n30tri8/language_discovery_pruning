@@ -1,4 +1,5 @@
 # Language-Specific Pruning of Large Language Models
+(TODO: make project intro more precise)
 
 This project investigates the effects of language-specific pruning on the performance of multilingual Large Language Models (LLMs). 
 We use the Wanda pruning technique to sparsify a model based on calibration data from a specific language and then evaluate its performance on both general knowledge (MMLU) and linguistic capability benchmarks for that language.
@@ -29,11 +30,8 @@ huggingface-cli download Qwen/Qwen2.5-7B-Instruct --local-dir ./raw_model/
 ## Installation 🛠️
 
 ### Local Environment
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/n30tri8/language_discovery_pruning.git
-    cd language_discovery_pruning
-    ```
+1.  Clone the repository.
+
 2.  Place the pre-downloaded model into a `raw_model/` directory and benchmark data into a `benchmark_data/` directory within the project root.
 
 3.  Set required environment variables.
@@ -126,7 +124,7 @@ To extend the experiment to a new language, follow these steps:
 5.  **Register Benchmark**: Add an entry for the new language in the `LINGUISTIC_BENCHMARKS` dictionary in `main.py`.
 6.  **Update `apply_benchmark_dir`**: In `main.py`, update the `apply_benchmark_dir` function to correctly pass the data directory to your new loader and `EvalSpec`.
 7.  **Add MMLU Data**: If you want to run `raw_eval` or `cross_eval`, add the corresponding MMLU test set for the new language in the `benchmark_data/mmlu` directory. The existing MMLU loader and evaluation logic should handle it automatically.
-    -   Add language specific prompt templates in [mmlu_prompt_templates.py](benchmark_loader/mmlu_prompt_templates.py)
+    -   Add language specific prompt templates in `benchmark_loader/mmlu_prompt_templates.py`.
 
 ## Benchmarks 📊
 The project uses several benchmarks, some of which were pre-processed using scripts in the `dataset_utils/` directory.
@@ -144,7 +142,8 @@ The project uses several benchmarks, some of which were pre-processed using scri
 ## Acknowledgements 🙏
 This project builds upon the following key repositories:
 *   **[Wanda](https://github.com/locuslab/wanda)**: The core pruning methodology. The implementation has been significantly adapted for our experiments, including optimizations for GPU memory, custom calibration data handling, and batch processing.
-*   **[pruning on ToM](https://github.com/Itakello/prune_on_tom)**: Provided the initial project structure and Wanda integration, which has since been substantially modified.
+*   **[pruning on ToM](https://github.com/Itakello/prune_on_tom)**: Served as the initial project structure and early integration of Wanda, which have since been extensively modified.
+Please note that, beyond the publicly available work in the original *pruning on ToM* repository, its author has not been directly involved in or contributed to the development of this project. The author’s name may appear in the contributors list because their commits are part of the inherited Git history from the original repository.
 
 ## License 📜
 This project is licensed under the MIT License - see the `LICENSE` file for details.
