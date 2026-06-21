@@ -97,7 +97,7 @@ def evaluate_raw_model(model_name, test_num, run_env, selected_languages):
     print(f"\nRaw model evaluation done. Results saved to '{logs_file}'.")
 
 
-def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_models=True):
+def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_models=True, complementary_pruning=False):
     save_threads = []
 
     tokenizer = setup_tokenizer(model_name)
@@ -142,12 +142,12 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
         torch.cuda.empty_cache()
 
         for ratio in sparsity_ratios:
-            print(f"\n=== Pruning on linguistic benchmark: '{benchmark}', ratio: {ratio} ===")
+            print(f"\n=== Pruning on linguistic benchmark: '{benchmark}', ratio: {ratio}, complementary_pruning: {complementary_pruning} ===")
             model_to_prune = load_raw_model(model_name)
 
             # Prune
             with torch.no_grad():
-                prune_wanda(model_to_prune, calib_data, ratio / 100.0)
+                prune_wanda(model_to_prune, calib_data, ratio / 100.0, complementary_pruning=complementary_pruning)
             print("=== Wanda-based pruning done ===")
 
             linguistic_eval = evaluate_on_linguistic(model_to_prune, tokenizer, evaluation_spec)
@@ -319,6 +319,12 @@ if __name__ == "__main__":
         default=True,
         help="Whether to save pruned models after pruning (default: True)."
     )
+    parser.add_argument(
+        "--complementary_pruning",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="If set, prune the complementary set of highest-Wanda-metric weights instead, sort of like an ablation. Default: False."
+    )
     args = parser.parse_args()
     to_run = set(args.run)
 
@@ -333,6 +339,6 @@ if __name__ == "__main__":
     if "raw_eval" in to_run:
         evaluate_raw_model(args.model, args.test_num, run_env, selected_languages)
     if "prune" in to_run:
-        prune(args.model, args.sparsity_ratios, run_env, selected_languages, save_pruned_models=args.save_pruned)
+        prune(args.model, args.sparsity_ratios, run_env, selected_languages, save_pruned_models=args.save_pruned, complementary_pruning=args.complementary_pruning)
     if "cross_eval" in to_run:
         cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env, selected_languages)

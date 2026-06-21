@@ -100,7 +100,7 @@ def prepare_calibration(model, dataloader):
     return calib_data
 
 
-def prune_wanda(model, calib_data, sparsity_ratio):
+def prune_wanda(model, calib_data, sparsity_ratio, complementary_pruning: bool = False):
     """
     Modified Wanda function that uses already-collected calibration data
     (inps, attention_masks, position_embeddings) rather than reloading from dataset.
@@ -172,9 +172,12 @@ def prune_wanda(model, calib_data, sparsity_ratio):
             row_norms = torch.sqrt(wrapped_layers[name].scaler_row).reshape(1, -1)
             W_metric = torch.abs(W) * row_norms
             del row_norms  # not need this anymore
-            # pick the fraction of smallest entries per-output
+            if complementary_pruning:
+                sparsity_ratio = 1 - sparsity_ratio
             k = int(W_metric.shape[1] * sparsity_ratio)
-            indices = torch.topk(W_metric, k, dim=-1, largest=False)[1]
+            # pick the fraction of smallest OR complementary entries per-output
+            pick_largest = True if complementary_pruning else False
+            indices = torch.topk(W_metric, k, dim=-1, largest=pick_largest)[1]
             W_mask = torch.zeros_like(W_metric, dtype=torch.bool)
             W_mask.scatter_(1, indices, True)
             subset[name].weight.data[W_mask] = 0  ## set weights to zero
