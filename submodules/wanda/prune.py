@@ -173,7 +173,7 @@ def prune_wanda(model, calib_data, sparsity_ratio, complementary_pruning: bool =
             W_metric = torch.abs(W) * row_norms
             del row_norms  # not need this anymore
             if complementary_pruning:
-                sparsity_ratio = 1 - sparsity_ratio
+                sparsity_ratio = 1.0 - sparsity_ratio
             k = int(W_metric.shape[1] * sparsity_ratio)
             # pick the fraction of smallest OR complementary entries per-output
             pick_largest = True if complementary_pruning else False
