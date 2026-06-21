@@ -19,7 +19,6 @@ The project supports experiments across several languages using the following be
 ## Dependencies
 *   Python 3.10
 *   A Llama-style Large Language Model compatible with the Wanda pruning codebase (e.g., `Qwen/Qwen2.5-7B-Instruct`, `meta-llama/Llama-3.1-8B-Instruct`).
-*   PyTorch and other libraries listed in `requirements.txt`.
 *   Benchmark datasets (see [Benchmarks](#benchmarks-📊) section).
 
 To download a model, you can use `huggingface-cli`:
