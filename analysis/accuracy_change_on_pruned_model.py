@@ -47,7 +47,7 @@ def process_model_data(raw_model_eval_file_path, cross_benchmark_file_path, outp
 
 # Example usage
 if __name__ == "__main__":
-    raw_model_eval_file_path = 'D:\\repos\\language_discovery_pruning\\results\\17-1_llama60p_qwen75\\raw_model_eval.csv'
-    cross_benchmark_file_path = 'D:\\repos\language_discovery_pruning\\results\\17-1_llama60p_qwen75\cross_benchmark_logs.csv'
-    output_file_path = 'D:\\repos\\language_discovery_pruning\\results\\17-1_llama60p_qwen75\\Llama-3.1-8B_60p_accuracy_comparison.csv'
+    raw_model_eval_file_path = 'D:\\repos\\language_discovery_pruning\\results\\17-1_llama60p_qwen75\\qwen\\raw_model_eval.csv'
+    cross_benchmark_file_path = 'D:\\repos\\language_discovery_pruning\\results\\17-1_llama60p_qwen75\\qwen\\cross_benchmark_logs_60p.csv'
+    output_file_path = 'D:\\repos\\language_discovery_pruning\\results\\17-1_llama60p_qwen75\\qwen\\Qwen2.5-7B_60p_accuracy_comparison.csv'
     process_model_data(raw_model_eval_file_path, cross_benchmark_file_path, output_file_path)
