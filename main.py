@@ -110,7 +110,7 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
     fout = open(linguistic_logs_file, "a", newline="", encoding="utf-8")
     writer = csv.writer(fout)
     if write_header:
-        writer.writerow(["model_name", "benchmark", "lang", "pruned_ratio", "evaluation_result"])
+        writer.writerow(["model_name", "benchmark", "lang", "pruned_ratio", "complementary", "evaluation_result"])
 
     for benchmark in LINGUISTIC_BENCHMARKS:
         lang = LINGUISTIC_BENCHMARKS[benchmark]['lang']
@@ -127,6 +127,7 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
             benchmark,
             lang,
             0,
+            str(complementary_pruning),
             str(linguistic_eval),
         ])
         fout.flush()
@@ -157,6 +158,7 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
                 benchmark,
                 lang,
                 ratio,
+                str(complementary_pruning),
                 str(linguistic_eval),
             ])
             fout.flush()
@@ -166,7 +168,7 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
                 # no more GPU processing needed for the model, copy the model to CPU for possible saving to avoid GPU memory spike during serialization
                 pruned_model_on_cpu = model_to_prune.cpu()
                 # no more GPU processing needed for the model
-                save_path = model_dir(run_env['model_dir'], model_name, benchmark, lang, ratio)
+                save_path = model_dir(run_env['model_dir'], model_name, benchmark, lang, ratio, complementary_pruning)
                 thread = save_pruned_model_async(pruned_model_on_cpu, save_path)
                 save_threads.append(thread)
                 print(f"Delegated saving model to thread: {thread}, save path: {save_path}")
@@ -183,7 +185,7 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
             thread.join()
 
 
-def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, selected_languages):
+def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, selected_languages, complementary_pruning):
     tokenizer = setup_tokenizer(model_name)
 
     logs_file = os.path.join(run_env['results_dir'], "cross_benchmark_logs.csv")
@@ -196,6 +198,7 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
             "pruned on",
             "language",
             "sparsity_ratio",
+            "complementary_pruning",
             "benchmark",
             "accuracy",
         ])
@@ -207,9 +210,7 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
             continue
 
         for ratio in sparsity_ratios:
-            load_path = model_dir(
-                run_env['model_dir'], model_name, linguistic_pruned, lang, ratio
-            )
+            load_path = model_dir(run_env['model_dir'], model_name, linguistic_pruned, lang, ratio, complementary_pruning)
             pruned_model, _ = load_pruned_model(load_path)
             print(f"\n=== Loaded pruned model from {load_path} ===")
 
@@ -217,7 +218,7 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
                 subtask_acc = evaluate_model(pruned_model, tokenizer, run_env['benchmark_data_dir'], subject, lang,
                                              test_num)
                 # Write results to file
-                writer.writerow([model_name, linguistic_pruned, lang, ratio, subject, subtask_acc])
+                writer.writerow([model_name, linguistic_pruned, lang, ratio, complementary_pruning,subject, subtask_acc])
                 fout.flush()
 
             # free GPU memory
@@ -341,4 +342,4 @@ if __name__ == "__main__":
     if "prune" in to_run:
         prune(args.model, args.sparsity_ratios, run_env, selected_languages, save_pruned_models=args.save_pruned, complementary_pruning=args.complementary_pruning)
     if "cross_eval" in to_run:
-        cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env, selected_languages)
+        cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env, selected_languages, complementary_pruning=args.complementary_pruning)

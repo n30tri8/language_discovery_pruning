@@ -74,9 +74,9 @@ def save_results(output_file, results_rows, output_cols, header=None):
             writer.writerow(row)
 
 
-def model_dir(pruned_model_dir, model_name, benchmark, lang, ratio):
+def model_dir(pruned_model_dir, model_name, benchmark, lang, ratio, complementary_pruning: bool):
     """Construct directory path for pruned model."""
-    save_name = f"{os.path.basename(model_name)}_{benchmark}_{lang}_{int(ratio)}pct"
+    save_name = f"{os.path.basename(model_name)}_{benchmark}_{lang}_{int(ratio)}pct{'_complementary' if complementary_pruning else ''}"
     save_name = "models--" + save_name.replace("/", "--")
     return os.path.join(pruned_model_dir, save_name)
 
