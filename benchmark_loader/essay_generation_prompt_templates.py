@@ -18,10 +18,10 @@ The goal is not to summarize philosophical history but to demonstrate conceptual
     'de':
 """Dies ist ein Test des philosophischen Verständnisses und der Argumentationsfähigkeit.
 Schreiben Sie einen prägnanten Essay (300–400 Wörter), der Ihr Verständnis für die folgenden philosophischen Konzepte zeigt:
-1. Erkenntnis
-2. Personale Identität
-3. Willensfreiheit
-4. Moral
+1. Empirismus
+2. Rationalismus
+3. Utilitarismus
+4. Existenzialismus
 Definieren Sie diese Konzepte nicht unabhängig voneinander. Stattdessen:
 - Erklären Sie jedes Konzept kurz.
 - Diskutieren Sie, wie die Konzepte miteinander zusammenhängen.
@@ -34,10 +34,10 @@ Das Ziel ist nicht, die philosophische Geschichte zusammenzufassen, sondern konz
     'fr':
 """Il s'agit d'un test de compréhension et de capacité de raisonnement philosophique.
 Rédigez un essai concis (300 à 400 mots) qui démontre votre compréhension des concepts philosophiques suivants :
-1. Connaissance
-2. Identité personnelle
-3. Libre arbitre
-4. Moralité
+1. Empirisme
+2. Rationalisme
+3. Utilitarisme
+4. Existentialisme
 Ne définissez pas ces concepts indépendamment. Au lieu de cela :
 - Expliquez brièvement chaque concept.
 - Discutez de la façon dont les concepts se rapportent les uns aux autres.
@@ -50,10 +50,10 @@ L'objectif n'est pas de résumer l'histoire de la philosophie mais de démontrer
     'it':
 """Questo è un test di comprensione e capacità di ragionamento filosofico.
 Scrivi un saggio conciso (300-400 parole) che dimostri la tua comprensione dei seguenti concetti filosofici:
-1. Conoscenza
-2. Identità personale
-3. Libero arbitrio
-4. Moralità
+1. Empirismo
+2. Razionalismo
+3. Utilitarismo
+4. Esistenzialismo
 Non definire questi concetti in modo indipendente. Invece:
 - Spiega brevemente ogni concetto.
 - Discuti come i concetti si relazionano tra loro.
@@ -66,10 +66,10 @@ L'obiettivo non è riassumere la storia filosofica ma dimostrare comprensione co
     'ar':
 """هذا اختبار للفهم والقدرة على الاستدلال الفلسفي.
 اكتب مقالاً موجزاً (300-400 كلمة) يوضح فهمك للمفاهيم الفلسفية التالية:
-1. المعرفة
-2. الهوية الشخصية
-3. حرية الإرادة
-4. الأخلاق
+1. التجريبية
+2. العقلانية
+3. النفعية
+4. الوجودية
 لا تقم بتعريف هذه المفاهيم بشكل مستقل. بدلاً من ذلك:
 - اشرح كل مفهوم باختصار.
 - ناقش كيف ترتبط المفاهيم ببعضها البعض.
@@ -82,10 +82,10 @@ L'obiettivo non è riassumere la storia filosofica ma dimostrare comprensione co
     'hi':
 """यह दार्शनिक समझ और तर्क क्षमता का परीक्षण है।
 एक संक्षिप्त निबंध (300-400 शब्द) लिखें जो निम्नलिखित दार्शनिक अवधारणाओं की आपकी समझ को प्रदर्शित करे:
-1. ज्ञान
-2. व्यक्तिगत पहचान
-3. स्वतंत्र इच्छा
-4. नैतिकता
+1. अनुभववाद
+2. बुद्धिवाद
+3. उपयोगितावाद
+4. अस्तित्ववाद
 इन अवधारणाओं को स्वतंत्र रूप से परिभाषित न करें। इसके बजाय:
 - प्रत्येक अवधारणा को संक्षेप में समझाएं।
 - चर्चा करें कि अवधारणाएं एक दूसरे से कैसे संबंधित हैं।
@@ -94,3 +94,13 @@ L'obiettivo non è riassumere la storia filosofica ma dimostrare comprensione co
 - सटीक और अकादमिक रूप से उपयुक्त भाषा का उपयोग करें।
 लक्ष्य दार्शनिक इतिहास को संक्षेप में प्रस्तुत करना नहीं है, बल्कि वैचारिक समझ, तर्क और संश्लेषण का प्रदर्शन करना है।"""
 }
+
+# min_new_tokens=
+# new_tokens_generation_bounds = {
+#     "en": {"max_new_tokens": 512, "min_new_tokens": 50},
+#     "it": {"max_new_tokens": 750, "min_new_tokens": 75},   # Western European multiplier
+#     "fr": {"max_new_tokens": 750, "min_new_tokens": 75},
+#     "de": {"max_new_tokens": 750, "min_new_tokens": 75},
+#     "ar": {"max_new_tokens": 1800, "min_new_tokens": 150}, # Arabic/Persian script adjustment
+#     "hi": {"max_new_tokens": 1800, "min_new_tokens": 150},
+# }

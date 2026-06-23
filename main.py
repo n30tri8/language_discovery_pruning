@@ -9,6 +9,7 @@ import torch
 from benchmark_loader.datautils import get_xglue, get_italian_calib, get_arabic_calib, get_hindi_calib
 from evaluation.ar_spec import AREvalSpec
 from evaluation.common_evaluation import evaluate_on_linguistic
+from evaluation.essay_generation_eval_task import essay_generation_test
 from evaluation.hi_spec import HIEvalSpec
 from evaluation.it_spec import ITEvalSpec
 from evaluation.mmlu_evaluation import evaluate_model
@@ -97,7 +98,8 @@ def evaluate_raw_model(model_name, test_num, run_env, selected_languages):
     print(f"\nRaw model evaluation done. Results saved to '{logs_file}'.")
 
 
-def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_models=True, complementary_pruning=False):
+def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_models=True,
+          complementary_pruning=False):
     save_threads = []
 
     tokenizer = setup_tokenizer(model_name)
@@ -143,7 +145,8 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
         torch.cuda.empty_cache()
 
         for ratio in sparsity_ratios:
-            print(f"\n=== Pruning on linguistic benchmark: '{benchmark}', ratio: {ratio}, complementary_pruning: {complementary_pruning} ===")
+            print(
+                f"\n=== Pruning on linguistic benchmark: '{benchmark}', ratio: {ratio}, complementary_pruning: {complementary_pruning} ===")
             model_to_prune = load_raw_model(model_name)
 
             # Prune
@@ -185,7 +188,8 @@ def prune(model_name, sparsity_ratios, run_env, selected_languages, save_pruned_
             thread.join()
 
 
-def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, selected_languages, complementary_pruning):
+def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, selected_languages,
+                               complementary_pruning):
     tokenizer = setup_tokenizer(model_name)
 
     logs_file = os.path.join(run_env['results_dir'], "cross_benchmark_logs.csv")
@@ -210,7 +214,8 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
             continue
 
         for ratio in sparsity_ratios:
-            load_path = model_dir(run_env['model_dir'], model_name, linguistic_pruned, lang, ratio, complementary_pruning)
+            load_path = model_dir(run_env['model_dir'], model_name, linguistic_pruned, lang, ratio,
+                                  complementary_pruning)
             pruned_model, _ = load_pruned_model(load_path)
             print(f"\n=== Loaded pruned model from {load_path} ===")
 
@@ -218,7 +223,8 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
                 subtask_acc = evaluate_model(pruned_model, tokenizer, run_env['benchmark_data_dir'], subject, lang,
                                              test_num)
                 # Write results to file
-                writer.writerow([model_name, linguistic_pruned, lang, ratio, complementary_pruning,subject, subtask_acc])
+                writer.writerow(
+                    [model_name, linguistic_pruned, lang, ratio, complementary_pruning, subject, subtask_acc])
                 fout.flush()
 
             # free GPU memory
@@ -227,6 +233,36 @@ def cross_benchmark_evaluation(model_name, test_num, sparsity_ratios, run_env, s
             torch.cuda.empty_cache()
 
     fout.close()
+
+
+def philosophical_essay_experiment(model_name, sparsity_ratios, run_env, selected_languages):
+    tokenizer = setup_tokenizer(model_name)
+    logs_dir = os.path.join(run_env['results_dir'], "philosophical_essay_logs")
+    os.makedirs(logs_dir, exist_ok=True)
+
+    allowed_langs = set(selected_languages)
+    for linguistic_pruned in LINGUISTIC_BENCHMARKS:
+        lang = LINGUISTIC_BENCHMARKS[linguistic_pruned]['lang']
+        if lang not in allowed_langs:
+            continue
+
+        for ratio in sparsity_ratios:
+            load_path = model_dir(run_env['model_dir'], model_name, linguistic_pruned, lang, ratio,
+                                  complementary_pruning=False)
+            pruned_model, _ = load_pruned_model(load_path)
+            print(f"\n=== Loaded pruned model from {load_path} ===")
+
+            generated_essay = essay_generation_test(pruned_model, tokenizer, lang)
+
+            essay_filename = f"essay_{model_name.replace('/', '_')}_{linguistic_pruned}_{lang}_{ratio}.txt"
+            essay_path = os.path.join(logs_dir, essay_filename)
+            with open(essay_path, "w", encoding="utf-8") as f:
+                f.write(generated_essay)
+
+            # free GPU memory
+            del pruned_model
+            gc.collect()
+            torch.cuda.empty_cache()
 
 
 def apply_benchmark_dir(proj_dir):
@@ -302,7 +338,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--run",
         nargs="+",
-        choices=["raw_eval", "prune", "cross_eval"],
+        choices=["raw_eval", "prune", "cross_eval", "essay_generation"],
         default=["raw_eval"],
         help="Which procedures to run. Choose any of: raw_eval prune cross_eval. Default: raw_eval.",
     )
@@ -340,6 +376,10 @@ if __name__ == "__main__":
     if "raw_eval" in to_run:
         evaluate_raw_model(args.model, args.test_num, run_env, selected_languages)
     if "prune" in to_run:
-        prune(args.model, args.sparsity_ratios, run_env, selected_languages, save_pruned_models=args.save_pruned, complementary_pruning=args.complementary_pruning)
+        prune(args.model, args.sparsity_ratios, run_env, selected_languages, save_pruned_models=args.save_pruned,
+              complementary_pruning=args.complementary_pruning)
     if "cross_eval" in to_run:
-        cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env, selected_languages, complementary_pruning=args.complementary_pruning)
+        cross_benchmark_evaluation(args.model, args.test_num, args.sparsity_ratios, run_env, selected_languages,
+                                   complementary_pruning=args.complementary_pruning)
+    if "essay_generation" in to_run:
+        philosophical_essay_experiment(args.model, args.sparsity_ratios, run_env, selected_languages)
