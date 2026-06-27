@@ -8,6 +8,7 @@ The core workflow consists of three main procedures:
 -   **`raw_eval`**: Evaluates the original, unpruned model on a subset of MMLU benchmarks to establish a performance baseline.
 -   **`prune`**: Prunes the model using language-specific calibration data (e.g., from XGLUE) at various sparsity ratios. It also evaluates the pruned model's linguistic capabilities on the same benchmark it was pruned on.
 -   **`cross_eval`**: Performs a cross-evaluation by testing the language-pruned models on MMLU benchmarks to assess how language-specific pruning affects general knowledge in that language.
+- 
 
 The project supports experiments across several languages using the following benchmarks:
 -   **Linguistic Benchmarks**: Used for pruning calibration and linguistic evaluation.
@@ -88,11 +89,12 @@ python main.py --model <model_name> [options]
 
 ### Arguments
 -   `--model`: (Required) The Hugging Face model identifier (e.g., `meta-llama/Llama-3.1-8B-Instruct`).
--   `--run`: The procedures to execute. Choose one or more from `raw_eval`, `prune`, `cross_eval`. (Default: `raw_eval`).
+-   `--run`: The procedures to execute. Choose one or more from `raw_eval`, `prune`, `cross_eval`, `essay_generation`. (Default: `raw_eval`).
 -   `--sparsity_ratios`: A list of pruning percentages (e.g., `35 50 60`). (Default: `50`).
 -   `--languages`: A list of language codes to run experiments on (e.g., `en hi it`). (Default: all available languages).
 -   `--test_num`: Number of samples to use from the test set for evaluations. (Default: `50`).
 -   `--save_pruned` / `--no-save_pruned`: Flag to enable/disable saving of pruned models. (Default: enabled).
+-   `--complementary_pruning` / `--no-complementary_pruning`: Toggle complementary pruning, which prunes the highest Wanda-metric weights instead of the lowest. (Default: disabled).
 -   `--seed`: Random seed for reproducibility. (Default: `42`).
 
 ### Examples
