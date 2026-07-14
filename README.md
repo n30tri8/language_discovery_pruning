@@ -1,14 +1,13 @@
 # Language-Specific Pruning of Large Language Models
-(TODO: make project intro more precise)
 
-This project investigates the effects of language-specific pruning on the performance of multilingual Large Language Models (LLMs). 
+This project investigates the effects of language-specific pruning on the performance of multilingual Large Language Models (LLMs) across different domains. 
 We use the Wanda pruning technique to sparsify a model based on calibration data from a specific language and then evaluate its performance on both general knowledge (MMLU) and linguistic capability benchmarks for that language.
 
-The core workflow consists of three main procedures:
+The core workflow consists of four main procedures:
 -   **`raw_eval`**: Evaluates the original, unpruned model on a subset of MMLU benchmarks to establish a performance baseline.
 -   **`prune`**: Prunes the model using language-specific calibration data (e.g., from XGLUE) at various sparsity ratios. It also evaluates the pruned model's linguistic capabilities on the same benchmark it was pruned on.
 -   **`cross_eval`**: Performs a cross-evaluation by testing the language-pruned models on MMLU benchmarks to assess how language-specific pruning affects general knowledge in that language.
-- 
+-   **`essay_generation`**: Loads a previously pruned model and generates a philosophical essay in the selected language, saving the output to the logs directory.
 
 The project supports experiments across several languages using the following benchmarks:
 -   **Linguistic Benchmarks**: Used for pruning calibration and linguistic evaluation.
@@ -111,6 +110,11 @@ python main.py --model <model_name> [options]
 3.  **Prune and then cross-evaluate on all available languages:**
     ```bash
     python main.py --model meta-llama/Llama-3.1-8B-Instruct --run prune cross_eval --test_num 300 --sparsity_ratios 60
+    ```
+
+4.  **Generate an essay from a previously pruned model:**
+    ```bash
+    python main.py --model meta-llama/Llama-3.1-8B-Instruct --run essay_generation --sparsity_ratios 35 --languages it
     ```
 
 ## Adding a New Language
